@@ -19,7 +19,7 @@ This module contains implementations and experiments around football analytics m
 | Pitch Control | [`pitch_control.ipynb`](./football_models/movement/pitch_control.ipynb) | Event | 🟢 Demo Available |
 | Passing Network | [`passing_network.ipynb`](./football_models/progression/passing_network.ipynb) | Event | 🟢 Demo Available |
 | Physical Analysis | [`physical_analysis.ipynb`](./football_models/movement/physical_analysis.ipynb) | Tracking | 🟢 Demo Available |
-| Passes per Defensive Action (PPDA) | N/A | Event | 🔴 Developing... |
+| Passes per Defensive Action (PPDA) | [`ppda.ipynb`](./football_models/defending/ppda.ipynb) | Event | 🟢 Demo Available |
 | Set-Piece Analysis | N/A | Event | 🔴 Developing... | 
 | Visual Occupancy | N/A | Tracking | 🔴 Developing... |
 | Expected Possession Value (EPV) | N/A | Event + Tracking | 🔴 Developing... |
