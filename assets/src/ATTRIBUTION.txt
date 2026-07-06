@@ -1,0 +1,5 @@
+Hero halftone morph — source silhouettes:
+  ball.svg        = game-icons.net, delapouite / soccer-ball  (CC BY 3.0)
+  player_1972.svg = Wikimedia Commons, "Football pictogram white (1972 Summer Olympics style).svg"
+                    (Munich 1972 Otl-Aicher-style Olympic pictogram; verify license before production use)
+Logo dots come from assets/halftone.js (no source PNG).
