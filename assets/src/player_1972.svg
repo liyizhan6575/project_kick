@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   version="1.1"
+   width="600"
+   height="600"
+   id="svg2"
+   style="display:inline"
+   sodipodi:docname="Football_pictogram_black_(1972_Summer_Olympics_style).svg"
+   inkscape:version="1.1.2 (b8e25be833, 2022-02-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs9" />
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     showgrid="false"
+     inkscape:zoom="1"
+     inkscape:cx="240.5"
+     inkscape:cy="179.5"
+     inkscape:window-width="1920"
+     inkscape:window-height="1001"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg2"
+     inkscape:snap-intersection-paths="true"
+     inkscape:snap-smooth-nodes="true"
+     inkscape:snap-bbox="true"
+     inkscape:snap-bbox-edge-midpoints="true"
+     inkscape:bbox-nodes="true"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:snap-global="true" />
+  <desc
+     id="desc2">Archery Pictogram -- Based on 1972 Summer Olympics sports pictograms by Otl Aicher -- Grophic created by Detmar Owen</desc>
+  <path
+     id="Frame"
+     d="M 0,0 V 600 H 600 V 0 Z"
+     style="display:inline;fill:#000000;fill-opacity:1;stroke:none"
+     sodipodi:nodetypes="ccccc" />
+  <path
+     id="path924"
+     style="display:inline;fill:#ffffff;fill-opacity:1;stroke-width:1.65342"
+     d="m 324.53125,123.33594 c -18.3197,0 -33.07031,14.75048 -33.07031,33.07031 0,18.3198 14.75061,33.06836 33.07031,33.06836 18.3198,0 33.06836,-14.74856 33.06836,-33.06836 0,-18.31983 -14.74856,-33.07031 -33.06836,-33.07031 z M 87.015625,200.43359 c -9.849661,0 -17.779297,7.92963 -17.779297,17.7793 0,9.84966 7.929636,17.7793 17.779297,17.7793 H 265.23047 l -55.17188,55.28515 63.41993,63.41797 94.04687,-94.04687 36.35742,36.35547 -62.85742,62.85742 c -6.96476,6.96476 -6.96476,18.17781 0,25.14258 6.96476,6.96476 18.17977,6.96476 25.14453,0 l 75.42774,-75.42774 c 6.96476,-6.96476 6.96476,-18.17781 0,-25.14258 l -75.10743,-75.10937 c -8.88959,-8.88959 -13.03007,-8.89063 -25.44726,-8.89063 z m 101.621095,112.33594 -75.58008,75.8457 c -3.08012,3.08015 -4.98047,7.34023 -4.98047,12.06055 0,9.44062 7.60042,17.04102 17.04102,17.04102 4.72036,0 8.98042,-1.90033 12.06054,-4.98047 L 212.9375,337.07031 Z M 227.49805,351.63086 43.78125,535.75 c -3.080106,3.0801 -4.982422,7.34031 -4.982422,12.06055 0,9.44057 7.600454,17.04101 17.041016,17.04101 4.720287,0 8.980433,-1.90035 12.060547,-4.98047 L 252.02148,376.15234 Z M 186.91211,510.9043 c -19.91225,0 -36.04688,16.13658 -36.04688,36.04882 1e-5,19.91229 16.13463,36.04688 36.04688,36.04688 19.91227,0 36.04883,-16.13457 36.04883,-36.04688 0,-19.91223 -16.13656,-36.04882 -36.04883,-36.04882 z m 0,6.93945 c 16.0745,0 29.10937,13.03492 29.10937,29.10937 0,16.07453 -13.03487,29.10547 -29.10937,29.10547 -16.07448,0 -29.10742,-13.03094 -29.10742,-29.10547 0,-16.07447 13.03294,-29.10937 29.10742,-29.10937 z" />
+</svg>
