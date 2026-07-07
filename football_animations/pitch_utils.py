@@ -1,10 +1,12 @@
 from manim import *
+import math
 import numpy as np
 
 class StandardPitch(VGroup):
     def __init__(self, scale=0.08, orientation="horizontal", **kwargs):
         super().__init__(**kwargs)
-        self.scale = scale
+        # Named pitch_scale so it doesn't shadow Mobject.scale()
+        self.pitch_scale = scale
         self.orientation = orientation
         
         # FIFA Constants (Meters)
@@ -26,9 +28,9 @@ class StandardPitch(VGroup):
         """Maps raw meter coordinates to Manim vectors based on orientation."""
         if self.orientation == "vertical":
             # Vertical: Length is on Y-axis, Width is on X-axis (inverted for standard view)
-            return np.array([-y * self.scale, x * self.scale, 0])
+            return np.array([-y * self.pitch_scale, x * self.pitch_scale, 0])
         # Horizontal: Length is on X-axis, Width is on Y-axis
-        return np.array([x * self.scale, y * self.scale, 0])
+        return np.array([x * self.pitch_scale, y * self.pitch_scale, 0])
 
     # ---------------------------------------------------------
     # Visual Drawing Methods
@@ -39,62 +41,63 @@ class StandardPitch(VGroup):
         l, w = d["length"], d["width"]
         
         # 1. Main Boundary & Halfway
-        pitch_w = l * self.scale if self.orientation == "horizontal" else w * self.scale
-        pitch_h = w * self.scale if self.orientation == "horizontal" else l * self.scale
+        pitch_w = l * self.pitch_scale if self.orientation == "horizontal" else w * self.pitch_scale
+        pitch_h = w * self.pitch_scale if self.orientation == "horizontal" else l * self.pitch_scale
         
         boundary = Rectangle(
             width=pitch_w, height=pitch_h, 
             stroke_color=stroke_color, stroke_width=stroke_width
         )
 
+        # to_coord handles the orientation swap, so the same
+        # pitch-frame endpoints work for both orientations
         halfway = Line(
-            self.to_coord(0, -w/2), self.to_coord(0, w/2), 
-            stroke_color=stroke_color, stroke_width=stroke_width
-        ) if self.orientation == "horizontal" else Line(
-            self.to_coord(-w/2, 0), self.to_coord(w/2, 0),
+            self.to_coord(0, -w/2), self.to_coord(0, w/2),
             stroke_color=stroke_color, stroke_width=stroke_width
         )
 
         # 2. Center Markings
-        center_circle = Circle(radius=d["center_circle"] * self.scale, color=stroke_color, stroke_width=stroke_width)
+        center_circle = Circle(radius=d["center_circle"] * self.pitch_scale, color=stroke_color, stroke_width=stroke_width)
         center_spot = Dot(ORIGIN, color=stroke_color, radius=0.04)
 
         # 3. Penalty Areas
-        pa_w, pa_h = d["pa_depth"] * self.scale, d["pa_width"] * self.scale
-        ga_w, ga_h = d["ga_depth"] * self.scale, d["ga_width"] * self.scale
+        pa_w, pa_h = d["pa_depth"] * self.pitch_scale, d["pa_width"] * self.pitch_scale
+        ga_w, ga_h = d["ga_depth"] * self.pitch_scale, d["ga_width"] * self.pitch_scale
 
         pa_l = Rectangle(
             width=pa_w if self.orientation == "horizontal" else pa_h,
             height=pa_h if self.orientation == "horizontal" else pa_w,
-            stroke_width=stroke_width
+            stroke_color=stroke_color, stroke_width=stroke_width
         ).move_to(self.to_coord(-l/2 + d["pa_depth"]/2, 0))
 
         ga_l = Rectangle(
             width=ga_w if self.orientation == "horizontal" else ga_h,
             height=ga_h if self.orientation == "horizontal" else ga_w,
-            stroke_width=stroke_width
+            stroke_color=stroke_color, stroke_width=stroke_width
         ).move_to(self.to_coord(-l/2 + d["ga_depth"]/2, 0))
 
         pa_r = pa_l.copy().move_to(self.to_coord(l/2 - d["pa_depth"]/2, 0))
         ga_r = ga_l.copy().move_to(self.to_coord(l/2 - d["ga_depth"]/2, 0))
 
         # 4. Spots & Arcs
-        ps_l = Dot(self.to_coord(-l/2 + d["penalty_spot"], 0), radius=0.04)
-        ps_r = Dot(self.to_coord(l/2 - d["penalty_spot"], 0), radius=0.04)
+        ps_l = Dot(self.to_coord(-l/2 + d["penalty_spot"], 0), color=stroke_color, radius=0.04)
+        ps_r = Dot(self.to_coord(l/2 - d["penalty_spot"], 0), color=stroke_color, radius=0.04)
 
-        arc_angle = 1.8 
-        arc_rad = d["center_circle"] * self.scale
-        
+        # Visible part of the 9.15 m circle around the spot outside the
+        # penalty area: half-angle = arccos((16.5 - 11) / 9.15)
+        arc_angle = 2 * math.acos((d["pa_depth"] - d["penalty_spot"]) / d["center_circle"])
+        arc_rad = d["center_circle"] * self.pitch_scale
+
         penalty_arc_l = Arc(
             radius=arc_rad,
             start_angle=-arc_angle/2 if self.orientation == "horizontal" else PI/2 - arc_angle/2,
-            angle=arc_angle, stroke_width=stroke_width
+            angle=arc_angle, stroke_color=stroke_color, stroke_width=stroke_width
         ).shift(ps_l.get_center())
 
         penalty_arc_r = Arc(
             radius=arc_rad,
             start_angle=PI - arc_angle/2 if self.orientation == "horizontal" else -PI/2 - arc_angle/2,
-            angle=arc_angle, stroke_width=stroke_width
+            angle=arc_angle, stroke_color=stroke_color, stroke_width=stroke_width
         ).shift(ps_r.get_center())
 
         # Add everything to this VGroup
@@ -144,7 +147,7 @@ class StandardPitch(VGroup):
         """Calculates clipped Voronoi polygons for a list of Wyscout points."""
         pts_manim = [self.wyscout_to_manim(p[0], p[1]) for p in points_ws]
         
-        l, w = self.dims["length"] * self.scale, self.dims["width"] * self.scale
+        l, w = self.dims["length"] * self.pitch_scale, self.dims["width"] * self.pitch_scale
         # Define base poly as 3D points (Manim standard)
         if self.orientation == "horizontal":
             base_poly = [np.array([x, y, 0]) for x, y in [(-l/2, -w/2), (l/2, -w/2), (l/2, w/2), (-l/2, w/2)]]

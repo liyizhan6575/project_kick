@@ -1,6 +1,5 @@
 from manim import *
 import numpy as np
-from pitch_utils import StandardPitch
 
 # ====================================================
 # 1. HELPER CLASS: MetricSurface
@@ -36,23 +35,25 @@ class MetricSurface(VGroup):
         if hasattr(self.pitch, "field_width"):
             p_width = self.pitch.field_width
             p_height = self.pitch.field_height
-        elif hasattr(self.pitch, "dims") and hasattr(self.pitch, "scale"):
+        elif hasattr(self.pitch, "dims") and hasattr(self.pitch, "pitch_scale"):
             orientation = getattr(self.pitch, "orientation", "horizontal")
-            length_m = self.pitch.dims["length"] * self.pitch.scale
-            width_m = self.pitch.dims["width"] * self.pitch.scale
+            length_units = self.pitch.dims["length"] * self.pitch.pitch_scale
+            width_units = self.pitch.dims["width"] * self.pitch.pitch_scale
             if orientation == "horizontal":
-                p_width = length_m
-                p_height = width_m
+                p_width = length_units
+                p_height = width_units
             else:
-                p_width = width_m
-                p_height = length_m
+                p_width = width_units
+                p_height = length_units
         else:
             p_width = self.pitch.width
             p_height = self.pitch.height
 
         cell_w = p_width / cols
         cell_h = p_height / rows
-        
+        # Anchor bars to wherever the pitch actually sits, not the scene origin
+        pitch_center = self.pitch.get_center()
+
         # Normalize matrix
         mat_max = np.max(self.matrix)
         mat_min = np.min(self.matrix)
@@ -80,7 +81,7 @@ class MetricSurface(VGroup):
                 y = ((rows - 1 - r) - rows/2 + 0.5) * cell_h
                 z = h / 2
 
-                bar.move_to([x, y, z])
+                bar.move_to(pitch_center + np.array([x, y, z]))
                 self.add(bar)
 
     def get_growth_animation(self, run_time=2.5, lag_ratio=0.0, direction="bottom_up"):
