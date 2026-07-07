@@ -103,9 +103,9 @@ window.CH3 = (function(){
     // --- verdict: one line, right on top of the pitch — number's right edge aligned to the pitch's RIGHT sideline, label LEFT of it ---
     { var ny=P([105,0])[1]-13*dpr, nvUp=ss(cl((at-8.5)/0.4,0,1)), nvDown=ss(cl((at-12.1)/0.35,0,1)), val=(XG*nvUp*(1-nvDown)).toFixed(2), xR=P([105,-34])[0], gap=10*dpr;   // label ALWAYS on top; number 0.00 → flips to 0.05 once all metrics are shown → back to 0.00 after the goal fades
       ctx.globalAlpha=alpha; ctx.textAlign='right';
-      ctx.font='800 '+(uf*1.4)+'px ui-monospace,monospace'; ctx.fillStyle='#fbbf24'; ctx.fillText(val, xR, ny);
+      ctx.font='800 '+(Math.max(uf*1.4, H*0.015*fscale))+'px ui-monospace,monospace'; ctx.fillStyle='#fbbf24'; ctx.fillText(val, xR, ny);   // value = max(board-relative, viewport-relative): board-rel wins full-screen, viewport-rel wins half-screen → readable in both, identical to xT
       var vw=ctx.measureText(val).width;
-      ctx.font='600 '+uf+'px ui-monospace,monospace'; ctx.fillStyle='#9aa0a8'; ctx.fillText('EXPECTED GOAL', xR-vw-gap, ny); }
+      ctx.font='600 '+(Math.max(uf, 11*dpr*fscale))+'px ui-monospace,monospace'; ctx.fillStyle='#9aa0a8'; ctx.fillText('EXPECTED GOAL', xR-vw-gap, ny); }   // label: same max() so both readouts track full & half screen identically
     ctx.restore();
   }
 
@@ -189,6 +189,7 @@ window.CH3 = (function(){
   function drawXT(ctx, P, alpha, t, W, H, dpr, sc){
     if(alpha<=0.01) return;
     var fscale=(sc&&H>W)?cl(1.7*sc/(11*dpr),0.7,1):1;   // portrait: shrink labels to track the smaller pitch; landscape stays 1:1
+    var uf=Math.abs(P([105,0])[1]-P([0,0])[1])*0.0145;   // board-relative base (as in drawXG) — combined via max() below so the readout matches xG's sizing in BOTH full & half screen
     var n=XT.length, per=2.6, total=n*per+2.6, at=t%total, i, ev, st, p, A, B;   // slower per-event so the value + map read
     var ci=Math.min(Math.floor(at/per),n-1), pcur=ss(cl((at-ci*per)/per,0,1)), aev=XT[ci];
     ctx.save(); ctx.textBaseline='alphabetic';
@@ -222,9 +223,9 @@ window.CH3 = (function(){
       var pi=(ci-1+n)%n, bC2=cellOf(aev.b), pC2=cellOf(XT[pi].b),
           curV=GRIDS[aev.kind][bC2.r][bC2.c], prevV=GRIDS[XT[pi].kind][pC2.r][pC2.c],
           vtxt=lp(prevV, curV, ss(cl((at-ci*per)/0.4,0,1))).toFixed(3);
-      ctx.textAlign='right'; ctx.font='800 '+(H*0.015*fscale)+'px ui-monospace,monospace'; ctx.fillStyle='#fbbf24'; ctx.fillText(vtxt, xR, ny);   // value sized like the xG page
+      ctx.textAlign='right'; ctx.font='800 '+(Math.max(uf*1.4, H*0.015*fscale))+'px ui-monospace,monospace'; ctx.fillStyle='#fbbf24'; ctx.fillText(vtxt, xR, ny);   // value = max(board-relative, viewport-relative): board-rel wins full-screen, viewport-rel wins half-screen → readable in both, identical to xG
       var vw=ctx.measureText(vtxt).width;
-      ctx.font='600 '+(11*dpr*fscale)+'px ui-monospace,monospace'; ctx.fillStyle='#9aa0a8'; ctx.fillText('EXPECTED THREAT', xR-vw-10*dpr, ny); }   // label sized + coloured like the xG "EXPECTED GOAL"
+      ctx.font='600 '+(Math.max(uf, 11*dpr*fscale))+'px ui-monospace,monospace'; ctx.fillStyle='#9aa0a8'; ctx.fillText('EXPECTED THREAT', xR-vw-10*dpr, ny); }   // label: same max() so both readouts track full & half screen identically
     ctx.restore();
   }
 
