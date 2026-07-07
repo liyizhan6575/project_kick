@@ -130,76 +130,106 @@
     .topbar .nav a:last-child{border-bottom:0}
     .topbar .nav a:hover{background:rgba(255,255,255,.04);color:#cfd3da}
   }
+  /* right cluster: nav + language flags + hamburger */
+  .topbar-right{display:flex;align-items:center;gap:clamp(12px,2vw,22px);flex:none;min-width:0}
+  /* language toggle — round flags with a white edge */
+  .langtoggle{display:flex;align-items:center;gap:9px;flex:none}
+  .langtoggle button{width:25px;height:25px;padding:0;border:0;background:none;cursor:pointer;border-radius:50%;opacity:.45;line-height:0;transition:opacity .2s,transform .2s;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+  .langtoggle button:hover{opacity:.85;transform:scale(1.09)}
+  .langtoggle button.on{opacity:1}
+  .langtoggle svg{display:block;width:100%;height:100%}
+  /* Simplified-Chinese typography: Teko/Chakra Petch carry no CJK glyphs → CJK stack, drop wide tracking + uppercase */
+  html[data-lang="zh"]{--cjk:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Source Han Sans SC","Noto Sans CJK SC",sans-serif}
+  html[data-lang="zh"] .slg,
+  html[data-lang="zh"] .panel h2,
+  html[data-lang="zh"] #ch2txt h2,
+  html[data-lang="zh"] .ch4head h2,
+  html[data-lang="zh"] .ch4card h3{font-family:var(--cjk);letter-spacing:.01em}
+  html[data-lang="zh"] .eb,
+  html[data-lang="zh"] .topbar .nav a,
+  html[data-lang="zh"] .ch4contact .ctl,
+  html[data-lang="zh"] .ch4collab .cl{font-family:var(--cjk);letter-spacing:.08em;text-transform:none}
+  html[data-lang="zh"] .panel p,
+  html[data-lang="zh"] #ch2txt p,
+  html[data-lang="zh"] .ch4card p,
+  html[data-lang="zh"] #ch1note,
+  html[data-lang="zh"] .ch4logos em{font-family:var(--cjk)}
 </style>
 </head>
 <body>
   <header class="topbar" id="topbar">
     <a class="brand" data-page="0"><img src="assets/logo_wordmark.png" alt="KICK"></a>
-    <nav class="nav" id="nav">
-      <a data-page="1">Computer Vision</a>
-      <a data-page="2">Visualization</a>
-      <a data-page="3">Research</a>
-      <a data-page="4" class="cta">Work with us</a>
-    </nav>
-    <button class="hamb" id="hamb" aria-label="Menu"><span></span><span></span><span></span></button>
+    <div class="topbar-right">
+      <nav class="nav" id="nav">
+        <a data-page="1" data-i18n="nav_cv">Computer Vision</a>
+        <a data-page="2" data-i18n="nav_viz">Visualization</a>
+        <a data-page="3" data-i18n="nav_research">Research</a>
+        <a data-page="4" class="cta" data-i18n="nav_work">Work with us</a>
+      </nav>
+      <div class="langtoggle" id="langtoggle">
+        <button data-lang-btn="en" aria-label="English" title="English"><svg viewBox="0 0 40 40" aria-hidden="true"><defs><clipPath id="ukClip"><circle cx="20" cy="20" r="18"/></clipPath></defs><g clip-path="url(#ukClip)"><rect width="40" height="40" fill="#012169"/><path d="M0,0 40,40 M40,0 0,40" stroke="#fff" stroke-width="8"/><path d="M0,0 40,40 M40,0 0,40" stroke="#C8102E" stroke-width="3.2"/><path d="M20,0V40 M0,20H40" stroke="#fff" stroke-width="12"/><path d="M20,0V40 M0,20H40" stroke="#C8102E" stroke-width="6.5"/></g><circle cx="20" cy="20" r="18" fill="none" stroke="#fff" stroke-width="2.4"/></svg></button>
+        <button data-lang-btn="zh" aria-label="中文" title="中文"><svg viewBox="0 0 40 40" aria-hidden="true"><defs><clipPath id="cnClip"><circle cx="20" cy="20" r="18"/></clipPath><polygon id="cnStar" points="0,-1 0.2246,-0.309 0.951,-0.309 0.363,0.118 0.588,0.809 0,0.382 -0.588,0.809 -0.363,0.118 -0.951,-0.309 -0.2246,-0.309"/></defs><g clip-path="url(#cnClip)"><rect width="40" height="40" fill="#DE2910"/><g fill="#FFDE00"><use href="#cnStar" transform="translate(12.5,13.5) scale(5.4)"/><use href="#cnStar" transform="translate(22.5,7) scale(1.7) rotate(23)"/><use href="#cnStar" transform="translate(26.5,11) scale(1.7) rotate(46)"/><use href="#cnStar" transform="translate(26.5,16.5) scale(1.7) rotate(70)"/><use href="#cnStar" transform="translate(22.5,20.5) scale(1.7) rotate(93)"/></g></g><circle cx="20" cy="20" r="18" fill="none" stroke="#fff" stroke-width="2.4"/></svg></button>
+      </div>
+      <button class="hamb" id="hamb" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
   </header>
   <div id="htex"></div>
-  <div id="ch3dots"><button data-m="0" class="on" title="Pitch Control"></button><button data-m="1" title="xG Model"></button><button data-m="2" title="xT Model"></button></div>
-  <div id="ch1dots"><button data-m="0" class="on" title="Keypoints Detection"></button><button data-m="1" title="Trace Estimation"></button><button data-m="2" title="Object Tracking"></button></div>
-  <div id="ch2dots"><button data-m="0" class="on" title="Goal replay"></button><button data-m="1" title="Lane dominance"></button><button data-m="2" title="Shot map"></button></div>
+  <div id="ch3dots"><button data-m="0" class="on" title="Pitch Control" data-i18n-title="ch3_dot1"></button><button data-m="1" title="xG Model" data-i18n-title="ch3_dot2"></button><button data-m="2" title="xT Model" data-i18n-title="ch3_dot3"></button></div>
+  <div id="ch1dots"><button data-m="0" class="on" title="Keypoint Detection" data-i18n-title="ch1_dot1"></button><button data-m="1" title="Trace Estimation" data-i18n-title="ch1_dot2"></button><button data-m="2" title="Object Tracking" data-i18n-title="ch1_dot3"></button></div>
+  <div id="ch2dots"><button data-m="0" class="on" title="Goal Replay" data-i18n-title="ch2_dot1"></button><button data-m="1" title="Lane Dominance" data-i18n-title="ch2_dot2"></button><button data-m="2" title="Shot Map" data-i18n-title="ch2_dot3"></button></div>
   <div class="stage"><canvas id="stage"></canvas></div>
   <div class="htext" id="htext">
-    <div class="slg">Bridging <span class="g">Science</span> and Football.</div>
-    <div class="sc" aria-label="Scroll down">
+    <div class="slg" data-i18n-html="hero_slogan">Bridging <span class="g">Science</span> and Football.</div>
+    <div class="sc" aria-label="Scroll down" data-i18n-aria="scroll">
       <svg class="cv" viewBox="0 0 28 14" aria-hidden="true"><polyline points="3,3 14,11 25,3"/></svg>
       <svg class="cv" viewBox="0 0 28 14" aria-hidden="true"><polyline points="3,3 14,11 25,3"/></svg>
       <svg class="cv" viewBox="0 0 28 14" aria-hidden="true"><polyline points="3,3 14,11 25,3"/></svg>
     </div>
   </div>
   <div class="panel" id="vizp">
-    <div class="eb">01 · Computer Vision</div>
-    <h2>We read the game straight from video</h2>
-    <p>Keypoint detection, player classification and tracking — original models, built and trained in-house — turn broadcast video into spatial data, no third-party feed required. The dataset underneath is held to the same standard: rigorously annotated, frame by frame.</p>
+    <div class="eb" data-i18n="ch1_eyebrow">01 · Computer Vision</div>
+    <h2 data-i18n="ch1_head">We read the game straight from video</h2>
+    <p data-i18n="ch1_body">Keypoint detection, player classification and tracking — original models, built and trained in-house — turn broadcast video into spatial data, no third-party feed required. The dataset underneath is held to the same standard: rigorously annotated, frame by frame.</p>
   </div>
   <div id="ch4">
     <div class="ch4head">
-      <h2>Whoever you are, there's <span class="g">a way in.</span></h2>
+      <h2 data-i18n-html="ch4_head">Whoever you are, there's <span class="g">a way in.</span></h2>
     </div>
     <div class="ch4cards">
       <div class="ch4card" style="--ac:#18c171">
-        <h3>Data providers</h3>
-        <p>Computer vision that lifts your numbers. Sharper keypoints, players tracked through occlusion, and traces for everyone off camera.</p>
+        <h3 data-i18n="ch4_c1_t">Data providers</h3>
+        <p data-i18n="ch4_c1_b">Computer vision that lifts your numbers. Sharper keypoints, players tracked through occlusion, and traces for everyone off camera.</p>
       </div>
       <div class="ch4card" style="--ac:#2f8bff">
-        <h3>Broadcasters</h3>
-        <p>Any data format in, a finished broadcast out. Live AI commentary, player spotlights, tactical breakdowns and on-pitch graphics — as the match happens.</p>
+        <h3 data-i18n="ch4_c2_t">Broadcasters</h3>
+        <p data-i18n="ch4_c2_b">Any data format in, a finished broadcast out. Live AI commentary, player spotlights, tactical breakdowns and on-pitch graphics — as the match happens.</p>
       </div>
       <div class="ch4card" style="--ac:#8b5cf6">
-        <h3>Clubs</h3>
-        <p>An annotation studio with our models inside. Coaches draw tactics, generate broadcast-grade visuals, and build film sessions that stick.</p>
+        <h3 data-i18n="ch4_c3_t">Clubs</h3>
+        <p data-i18n="ch4_c3_b">An annotation studio with our models inside. Coaches draw tactics, generate broadcast-grade visuals, and build film sessions that stick.</p>
       </div>
       <div class="ch4card" style="--ac:#ef3b5b">
-        <h3>Individuals</h3>
-        <p>Football isn't just for the industry. Love the game and brilliant at something — music, art, history, code, anything? Come make something nobody's made. Bring the passion; we'll find the rest.</p>
+        <h3 data-i18n="ch4_c4_t">Individuals</h3>
+        <p data-i18n="ch4_c4_b">Football isn't just for the industry. Love the game and brilliant at something — music, art, history, code, anything? Come make something nobody's made. Bring the passion; we'll find the rest.</p>
       </div>
     </div>
     <a class="ch4contact" href="mailto:li-yizhan@outlook.com">
-      <span class="ctl">Get in touch / Request a demo</span>
+      <span class="ctl" data-i18n="ch4_cta">Get in touch / Request a demo</span>
       <span class="ctm">li-yizhan@outlook.com</span>
     </a>
     <div class="ch4collab">
-      <div class="cl">Partnerships</div>
+      <div class="cl" data-i18n="ch4_partners">Partnerships</div>
       <div class="ch4logos">
-        <span><img src="assets/logo_baidu_cloud.png" alt="Baidu AI Cloud"><em>Baidu AI Cloud</em></span>
-        <span><img src="assets/logo_baidu_app.png?v=2" alt="Baidu App"><em>Baidu App</em></span>
-        <span><img src="assets/logo_bilibili.png" alt="Bilibili"><em>Bilibili</em></span>
+        <span><img src="assets/logo_baidu_cloud.png" alt="Baidu AI Cloud"><em data-i18n="partner_baidu_cloud">Baidu AI Cloud</em></span>
+        <span><img src="assets/logo_baidu_app.png?v=2" alt="Baidu App"><em data-i18n="partner_baidu_app">Baidu App</em></span>
+        <span><img src="assets/logo_bilibili.png" alt="Bilibili"><em data-i18n="partner_bilibili">Bilibili</em></span>
       </div>
     </div>
   </div>
   <div id="ch2dark"></div>
-  <div id="ch2txt"><div class="eb">02 · Visualization</div><h2>We turn any feed into broadcast.</h2><p>Event data or full tracking — Sony Hawk-Eye, Stats Perform, StatsBomb, or whatever standard you already run — we take any of it and turn it into clean, broadcast-ready graphics.</p></div>
-  <div class="panel" id="ch3txt"><div class="eb">03 · Research</div><h2>More than an engineering project.</h2><p>Pitch control, expected goals, expected threat — we stand on the best of football science and build on it with our own value models, refined with the right method for each problem. We open-source the field's leading metrics on <a id="ch3link" href="https://github.com/liyizhan6575/project_kick" target="_blank" rel="noopener">GitHub</a>, and welcome every aspiring scholar and practitioner to join the research.</p></div>
-  <div id="ch1note">Every visible landmark, <b>pinned to the pixel</b> — 99.7% recall, sub-pixel precision. Measured, not estimated.</div>
+  <div id="ch2txt"><div class="eb" data-i18n="ch2_eyebrow">02 · Visualization</div><h2 data-i18n="ch2_head">We turn any feed into broadcast.</h2><p data-i18n="ch2_body">Event data or full tracking — Sony Hawk-Eye, Stats Perform, StatsBomb, or whatever standard you already run — we take any of it and turn it into clean, broadcast-ready graphics.</p></div>
+  <div class="panel" id="ch3txt"><div class="eb" data-i18n="ch3_eyebrow">03 · Research</div><h2 data-i18n="ch3_head">More than an engineering project.</h2><p><span data-i18n="ch3_body_1">Pitch control, expected goals, expected threat — we stand on the best of football science and build on it with our own value models, refined with the right method for each problem. We open-source the field's leading metrics on </span><a id="ch3link" href="https://github.com/liyizhan6575/project_kick" target="_blank" rel="noopener">GitHub</a><span data-i18n="ch3_body_2">, and welcome every aspiring scholar and practitioner to join the research.</span></p></div>
+  <div id="ch1note" data-i18n-html="ch1_note">Every visible landmark, <b>pinned to the pixel</b> — 99.7% recall, sub-pixel precision. Measured, not estimated.</div>
   <section class="after">[ PRODUCT SHOWCASE · PITCH AS CANVAS · VIS / CV / RESEARCH ]</section>
 
 <script src="assets/shapes.js?v=5"></script>
@@ -212,6 +242,7 @@
 <script src="assets/clip_shotmap.js?v=4"></script>
 <script src="assets/clip_pc.js?v=4"></script>
 <script src="assets/ch3_modes.js?v=32"></script>
+<script src="assets/i18n.js?v=1"></script>
 <script>
 (function(){
   var cv=document.getElementById('stage'), ctx=cv.getContext('2d');
