@@ -1,6 +1,4 @@
 from manim import *
-import pandas as pd
-import numpy as np
 
 class VoronoiManager:
     def __init__(self, scene, pitch, attack_color=ORANGE, defense_color=BLUE_E):
@@ -10,8 +8,8 @@ class VoronoiManager:
         self.defense_color = defense_color
         self.alpha = 0.28
         
-        self.player_dots = {} 
-        self.polygons = []
+        self.player_dots = {}
+        self.polygons = VGroup()
         self.ball = None
 
     def get_frame_data(self, df, frame_id):
@@ -110,7 +108,11 @@ class VoronoiManager:
     def run_animation(self, df, fps=25):
         """Loops through frames using .become() to prevent ghosting."""
         frames = sorted(df["frame"].unique())
-        
+
+        # Works standalone too: attach the polygon group if no intro method ran
+        if self.polygons not in self.scene.mobjects:
+            self.scene.add(self.polygons)
+
         for f in frames:
             players, ball_pos = self.get_frame_data(df, f)
             sites = [p["pos"] for p in players]

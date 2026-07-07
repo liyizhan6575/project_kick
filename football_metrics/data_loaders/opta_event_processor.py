@@ -1,6 +1,6 @@
 """
 =======================
-Opta event processor for the pitch pilot pipeline.
+Opta event processor.
 
 For every relevant Opta event this module emits one dict record containing:
   - Full tactical context  (chain, location, outcome, qualifiers)
@@ -8,9 +8,15 @@ For every relevant Opta event this module emits one dict record containing:
 
 Import
 ------
-    import sys, os
-    sys.path.insert(0, os.path.dirname(__file__))   # if notebook is in a subfolder
-    from opta_event_processor import (
+This module lives at football_metrics/data_loaders/ inside the repo. The
+notebooks add the repo root to sys.path and import it as a package module:
+
+    import sys
+    from pathlib import Path
+    repo_root = Path().resolve().parents[0]   # notebook sits one level down
+    sys.path.append(str(repo_root))
+
+    from football_metrics.data_loaders.opta_event_processor import (
         OptaEventProcessor, dedup_opta_events, INFERENCE_EVENT_TYPES
     )
 
@@ -24,7 +30,7 @@ Quick usage
     import numpy as np
     feats = np.stack([r["feat"] for r in records if r["feat"] is not None])
 
-    # All tactical events for FLARE triggers
+    # All tactical events (full chain/location context)
     tactical = [r for r in records if not r["is_passthrough"]]
 
 Output record keys (24)
@@ -46,10 +52,13 @@ PARTICIPANT
 MATCH STATE  — POST-event score
     score_home    int         home goals after this event
     score_away    int         away goals after this event
+                              (penalty-shootout goals, period 5, excluded)
     is_own_goal   bool        typeId==16 and qualifier 28 present
 
 POSSESSION CHAIN  — None for passthrough events
-    chain_id      int         monotonic; increments on turnover or set-piece start
+    chain_id      int         monotonic; increments at a set-piece start or when
+                              the OPPOSING team performs a possession-gaining
+                              action (both-team duel pairs do not break chains)
     chain_len     int         passes in current chain (typeId=1 only)
     play_pattern  str         "Regular Play" | "From Corner" | "From Free Kick" |
                               "From Throw-in" | "From Goal Kick" | "From Kick Off"
@@ -57,9 +66,9 @@ POSSESSION CHAIN  — None for passthrough events
 LOCATION  — normalised [0, 1]  (None for passthrough)
     start_x       float       x / 100
     start_y       float       y / 100
-    end_x         float|None  qualifier 140 / 100  (passes only)
-    end_y         float|None  qualifier 141 / 100  (passes only)
-    dx            float|None  end_x - start_x      (passes only)
+    end_x         float|None  qualifier 140 / 100  (passes only; NaN if missing)
+    end_y         float|None  qualifier 141 / 100  (passes only; NaN if missing)
+    dx            float|None  end_x - start_x      (passes only; NaN if missing)
 
 RAW
     outcome       int|None    e["outcome"]  (None for passthrough)
@@ -69,7 +78,7 @@ INFERENCE FEATURE
     feat          np.ndarray  shape (14,) float32  — regulation pass/shot only
                   None        all other events
 
-    feat column layout (matches finalScore COL_NAMES):
+    feat column layout:
       0  event_type   0.0=pass  1.0=shot
       1  x_norm       start_x
       2  y_norm       start_y
@@ -79,9 +88,9 @@ INFERENCE FEATURE
       6  score_away   PRE-event away goals, capped 5  ← intentionally pre-event
       7  chain_len    chain_len / CHAIN_CAP
       8  t_since      minutes since last pass / T_SINCE_CAP
-      9  end_x        pass end x / 100  (0.0 for shots)
-     10  end_y        pass end y / 100  (0.0 for shots)
-     11  dx           end_x - start_x  (0.0 for shots)
+      9  end_x        pass end x / 100  (0.0 for shots or if qualifier missing)
+     10  end_y        pass end y / 100  (0.0 for shots or if qualifier missing)
+     11  dx           end_x - start_x  (0.0 for shots or if qualifier missing)
      12  is_goal      1.0 if typeId==16 regular goal  (0.0 otherwise)
      13  pass_subtype {0,1,2,3,4}  first pass of chain only; 0 elsewhere
                       0=open/kickoff  1=corner  2=free kick
@@ -113,10 +122,10 @@ TACTICAL_EVENT_TYPES = {
     15,  # Blocked Shot
     16,  # Goal  (incl. own goals — handled via qualifier 28)
     17,  # Card
-    41,  # Ball Recovery
+    41,  # Punch (keeper)
     44,  # Aerial
     45,  # Challenge
-    49,  # Ball Touch
+    49,  # Ball Recovery
     50, 52, 54, 55, 59, 61, 74, 83,
 }
 
@@ -131,7 +140,35 @@ PASSTHROUGH_EVENT_TYPES = {
 # Inference feature events: subset of tactical; produce 14-float feat array
 INFERENCE_EVENT_TYPES = {1, 13, 14, 15, 16}   # pass + all shot types
 
-# ── Inference feature constants (must match finalScore Block 1) ────────────────
+# Possession-gaining actions. A chain breaks ONLY when the OPPOSING team
+# performs one of these — a completed pass / successful take-on / shot,
+# an interception, a tackle that wins the ball, a ball recovery, or a
+# keeper claim / pick-up. Both-team duel pairs (Foul 4, Aerial 44,
+# Challenge 45), saves and failed tackles are logged without possession
+# changing hands, so they must NOT break chains (consistent with the
+# passing_network recipient scan, which skips duel typeIds {4, 44, 45}).
+_GAIN_ALWAYS = {
+    8,   # Interception
+    11,  # Claim (keeper)
+    13,  # Miss           — a shot implies possession
+    14,  # Post
+    15,  # Blocked Shot
+    16,  # Goal
+    49,  # Ball Recovery
+    52,  # Keeper pick-up
+}
+_GAIN_IF_SUCCESS = {   # possession-gaining only when outcome == 1
+    1,   # Pass     (completed)
+    3,   # Take On  (successful)
+    7,   # Tackle   (wins the ball)
+}
+
+# Public aliases so consumers (e.g. passing_network's recipient scan) share
+# the exact same possession-gain taxonomy as the chain enricher
+GAIN_ALWAYS = _GAIN_ALWAYS
+GAIN_IF_SUCCESS = _GAIN_IF_SUCCESS
+
+# ── Inference feature constants ────────────────────────────────────────────────
 CHAIN_CAP     = 30
 T_SINCE_CAP   = 2.0
 MAX_GOALS     = 5
@@ -147,7 +184,7 @@ _Q_FREEKICK  = "5"
 _Q_THROW     = "107"
 _Q_OWN_GOAL  = "28"
 
-# Play-pattern string → pass_subtype float (matches finalScore PASS_SUBTYPE values)
+# Play-pattern string → pass_subtype float (feat column 13)
 _PATTERN_SUBTYPE = {
     "From Corner"   : 1.0,
     "From Free Kick": 2.0,
@@ -167,6 +204,15 @@ def _parse_quals(ev: dict) -> dict:
         str(q.get("qualifierId")): q.get("value")
         for q in raw if isinstance(q, dict)
     }
+
+
+def _is_possession_gain(type_id: int, outcome) -> bool:
+    """True if this event establishes possession for the acting team."""
+    if type_id in _GAIN_ALWAYS:
+        return True
+    if type_id in _GAIN_IF_SUCCESS:
+        return outcome == 1
+    return False
 
 
 def _detect_play_pattern(quals: dict, is_turnover: bool, prev: str) -> str:
@@ -228,7 +274,8 @@ class OptaEventProcessor:
         self.chain_id     = 0
         self.chain_len    = 0           # passes in current chain
         self.play_pattern = "Regular Play"
-        self.last_team    = None
+        self.last_team    = None        # team in possession (possession-gaining
+                                        # actions only — duels don't shift it)
 
         # Timing state (regulation pass/shot inference only)
         self.last_pass_time = None      # minutes, for t_since calculation
@@ -309,7 +356,8 @@ class OptaEventProcessor:
         pre_score_h = self.home_goals
         pre_score_a = self.away_goals
 
-        if type_id == 16:
+        # Penalty-shootout goals (period 5) do not count toward the score
+        if type_id == 16 and period_id != 5:
             # XOR: own goal flips who benefits
             if (t_id == self.h_id) ^ is_own_goal:
                 self.home_goals += 1
@@ -317,7 +365,18 @@ class OptaEventProcessor:
                 self.away_goals += 1
 
         # ── Chain state ────────────────────────────────────────────────────────
-        is_turnover = (self.last_team is not None and t_id != self.last_team)
+        # Turnover rule: a chain breaks only when the OPPOSING team performs a
+        # possession-GAINING action (see _GAIN_ALWAYS / _GAIN_IF_SUCCESS).
+        # Both-team duel pairs, fouls won, saves and failed tackles do not
+        # break chains.
+        outcome_val = int(ev["outcome"]) if ev.get("outcome") is not None else None
+        gains_possession = _is_possession_gain(type_id, outcome_val)
+
+        is_turnover = (
+            self.last_team is not None
+            and t_id != self.last_team
+            and gains_possession
+        )
         new_pattern = _detect_play_pattern(quals, is_turnover, self.play_pattern)
 
         if self.last_team is None or is_turnover or new_pattern != self.play_pattern:
@@ -326,15 +385,20 @@ class OptaEventProcessor:
         if type_id == 1:
             self.chain_len = min(self.chain_len + 1, CHAIN_CAP)
 
-        self.last_team = t_id
+        # last_team tracks possession, so it moves only on possession-gaining
+        # actions (plus the very first tactical event of the stream)
+        if gains_possession or self.last_team is None:
+            self.last_team = t_id
 
         # ── Location ──────────────────────────────────────────────────────────
         start_x = float(ev.get("x", 0.0)) / 100.0
         start_y = float(ev.get("y", 0.0)) / 100.0
 
         if type_id == 1:
-            end_x = float(quals.get("140", ev.get("x", 0.0))) / 100.0
-            end_y = float(quals.get("141", ev.get("y", 0.0))) / 100.0
+            # Missing end-location qualifiers (140/141) yield NaN — never
+            # fabricate a zero-length pass by defaulting end to start
+            end_x = float(quals["140"]) / 100.0 if "140" in quals else float("nan")
+            end_y = float(quals["141"]) / 100.0 if "141" in quals else float("nan")
             dx    = end_x - start_x
         else:
             end_x = end_y = dx = None
@@ -366,7 +430,10 @@ class OptaEventProcessor:
                     if self.chain_len == 1 else 0.0
                 )
                 feat_common[0] = float(EVT_PASS)
-                feat = np.array(feat_common + [end_x, end_y, dx, 0.0, pass_sub],
+                # NaN-safe: passes lacking end-location qualifiers fall back
+                # to the shot convention (0.0) inside the feature vector
+                feat_end = [0.0 if np.isnan(v) else v for v in (end_x, end_y, dx)]
+                feat = np.array(feat_common + feat_end + [0.0, pass_sub],
                                 dtype=np.float32)
                 self.last_pass_time = minute
 
@@ -398,7 +465,7 @@ class OptaEventProcessor:
             "end_x"         : end_x,
             "end_y"         : end_y,
             "dx"            : dx,
-            "outcome"       : (int(ev["outcome"]) if ev.get("outcome") is not None else None),
+            "outcome"       : outcome_val,
             "quals"         : quals,
             "feat"          : feat,
         }

@@ -1,0 +1,22 @@
+# Core scientific stack
+numpy>=1.26
+pandas>=2.3
+scipy>=1.15
+
+# Plotting
+matplotlib>=3.10
+seaborn>=0.13
+mplsoccer>=1.6
+
+# Modeling
+scikit-learn>=1.7
+xgboost>=3.1
+torch>=2.5
+joblib>=1.5
+
+# Graphs and utilities
+networkx>=3.4
+tqdm>=4.67
+
+# Animations (football_animations only)
+manim>=0.19

@@ -10,3 +10,7 @@ __pycache__/
 .vscode/
 # Editor / tooling config
 .claude/
+# Model artifacts (ignored everywhere EXCEPT committed reusable weights)
+*.pkl
+!football_metrics/model_utils/*.pkl
+!football_metrics/model_utils/*.npy
