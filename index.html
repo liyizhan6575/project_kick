@@ -206,7 +206,7 @@
       </div>
       <div class="ch4card" style="--ac:#8b5cf6">
         <h3 data-i18n="ch4_c3_t">Clubs</h3>
-        <p data-i18n="ch4_c3_b">An annotation studio with our models inside. Coaches draw tactics, generate broadcast-grade visuals, and build film sessions that stick.</p>
+        <p data-i18n="ch4_c3_b">Annotation software with our models inside. Coaches draw tactics, generate broadcast-grade visuals, and build film sessions that stick.</p>
       </div>
       <div class="ch4card" style="--ac:#ef3b5b">
         <h3 data-i18n="ch4_c4_t">Individuals</h3>
@@ -242,7 +242,7 @@
 <script src="assets/clip_shotmap.js?v=4"></script>
 <script src="assets/clip_pc.js?v=4"></script>
 <script src="assets/ch3_modes.js?v=32"></script>
-<script src="assets/i18n.js?v=1"></script>
+<script src="assets/i18n.js?v=2"></script>
 <script>
 (function(){
   var cv=document.getElementById('stage'), ctx=cv.getContext('2d');
@@ -618,7 +618,7 @@
                      : W*0.215*ss(cl(G-2,0,1));                            // ch2 broadcast (centre) → ch3 vertical board (RIGHT); ch4 keeps it RIGHT (board fades there, logo resolves bottom-right)
     if(portrait)pshift=0;                                                 // portrait: scene stays centred (no left/right column slide) — the text panel stacks below it via CSS
     draw(t, G, pshift, cvClip, clipT);
-    htext.style.opacity=(1-ss(cl(G/0.18,0,1))).toFixed(2);
+    htext.style.opacity=(ss(cl((t-0.7)/1.0,0,1))*(1-ss(cl(G/0.18,0,1)))).toFixed(2);   // entrance: slogan fades IN with the logo ignition (t 0.7→1.7s), then scroll fades it out
     var fade2=ss(cl((G-1)/0.2,0,1));   // CV-scene text clears FAST at the start of the flip (so it doesn't linger over the tilt)
     var textP=ss(cl((G-0.58)/0.36,0,1))*(1-fade2);
     vizp.style.opacity=textP.toFixed(2); vizp.style.transform='translateX('+lp(40,0,textP).toFixed(0)+'px)';
