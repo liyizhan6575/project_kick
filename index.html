@@ -71,7 +71,7 @@
   #ch1note b{font-weight:600;color:rgb(150,224,255)}
   @media(max-width:760px),(orientation:portrait){#ch1note{max-width:84vw;font-size:12.5px}}
   #stage{position:sticky;top:0;display:block;width:100%;height:100svh}
-  .htext{position:fixed;left:0;bottom:0;width:100%;text-align:center;padding-bottom:15vh;z-index:3;pointer-events:none}
+  .htext{position:fixed;left:0;bottom:0;width:100%;text-align:center;padding-bottom:15vh;z-index:3;pointer-events:none;opacity:0}   /* hidden on first paint (like every panel); JS fades the slogan in with the entrance — prevents the pre-JS flash + pop-off */
   .htext .slg{font:700 clamp(26px,7.2vw,48px)/1.05 'Teko',sans-serif;letter-spacing:.04em;text-transform:uppercase}
   .htext .slg .g{background:linear-gradient(100deg,#18c171,#2f8bff,#8b5cf6,#ef3b5b,#ff8a3b);-webkit-background-clip:text;background-clip:text;color:transparent}
   .htext .en{font:700 12px/1 ui-monospace,monospace;letter-spacing:.42em;color:#9aa0a8;margin-top:13px}
