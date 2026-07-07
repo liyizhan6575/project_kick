@@ -177,7 +177,7 @@
   </header>
   <div id="htex"></div>
   <div id="ch3dots"><button data-m="0" class="on" title="Pitch Control" data-i18n-title="ch3_dot1"></button><button data-m="1" title="xG Model" data-i18n-title="ch3_dot2"></button><button data-m="2" title="xT Model" data-i18n-title="ch3_dot3"></button></div>
-  <div id="ch1dots"><button data-m="0" class="on" title="Keypoint Detection" data-i18n-title="ch1_dot1"></button><button data-m="1" title="Trace Estimation" data-i18n-title="ch1_dot2"></button><button data-m="2" title="Object Tracking" data-i18n-title="ch1_dot3"></button></div>
+  <div id="ch1dots"><button data-m="1" class="on" title="Trace Estimation" data-i18n-title="ch1_dot2"></button><button data-m="0" title="Keypoint Detection" data-i18n-title="ch1_dot1"></button><button data-m="2" title="Object Tracking" data-i18n-title="ch1_dot3"></button></div>
   <div id="ch2dots"><button data-m="0" class="on" title="Goal Replay" data-i18n-title="ch2_dot1"></button><button data-m="1" title="Lane Dominance" data-i18n-title="ch2_dot2"></button><button data-m="2" title="Shot Map" data-i18n-title="ch2_dot3"></button></div>
   <div class="stage"><canvas id="stage"></canvas></div>
   <div class="htext" id="htext">
@@ -541,7 +541,7 @@
   var htext=document.getElementById('htext'), vizp=document.getElementById('vizp'), htex=document.getElementById('htex'), htexX=88, htexY=50, ch4=document.getElementById('ch4'), ch4mailLink=ch4.querySelector('.ch4contact'), ch1note=document.getElementById('ch1note');
   var ch2txt=document.getElementById('ch2txt'), ch2dark=document.getElementById('ch2dark'), ch3txt=document.getElementById('ch3txt'), ch3link=document.getElementById('ch3link');
   var ch3dots=document.getElementById('ch3dots'), ch3Mode=0, ch3ModePrev=0, modeT0=-99, _nowT=0, _ch3by=0, _ch3lx=0, _ch3cy=0;   // chapter-3 display mode (0=pitch control · 1=xG · 2=xT) + crossfade clock ; _ch3by = board bottom screen-y ; _ch3lx/_ch3cy = left sideline x + board centre y (sideline dot column)
-  var ch1dots=document.getElementById('ch1dots'), ch1Mode=0, ch1ModePrev=0, ch1modeT0=-99, ch1modeAt=0, _ch1vis=false, _ch1by=0, _ch1ty=0, _ch1lx=0, _trackT0=0, _ch1hard=false, CH1_DUR=[6,12,9];   // chapter-1 mode (0=keypoints · 1=trace estimation · 2=full tracking); _trackT0 = clip-loop start; CH1_DUR = auto dwell (page 2 instead runs exactly one clip loop); _ch1by = CV pitch bottom screen-y
+  var ch1dots=document.getElementById('ch1dots'), ch1Mode=1, ch1ModePrev=0, ch1modeT0=-99, ch1modeAt=0, _ch1vis=false, _ch1by=0, _ch1ty=0, _ch1lx=0, _trackT0=0, _ch1hard=false, CH1_DUR=[6,8,9], CH1_NEXT=[2,0,1];   // chapter-1 CONTENT mode (0=keypoints · 1=trace estimation · 2=full tracking); page ORDER is trace(1)→keypoints(0)→tracking(2) via CH1_NEXT; CH1_DUR = per-mode auto dwell; _trackT0 = clip-loop start; _ch1by = CV pitch bottom screen-y
   var ch2dots=document.getElementById('ch2dots'), ch2Mode=0, _ch2prevT=0, _ch2by=0;   // chapter-2 page (0=goal replay · 1=lane dominance · 2=shot map)
   var _ch2dk=0, _ldmRaw=0, _smRaw=0, _ldmA=0, _smA=0, _ch2ldT0=-99, _ch2smT0=-99, _ldmGrowT=0, _smGrowT=0;   // _ch2dk = pitch-blackout blend (any page>0) → bcFade ; _ldmRaw/_smRaw = per-page selectors ; _ldmA/_smA = their gated alphas ; grow clocks/starts for lane-dom · shot-map
   var ch2modeAt=0, ch2modeT0=-99, _ch2vis=false, _ch2onL=false, _clipTotal=16, CH2_DUR=[16,4.6,8.5];   // ch2modeAt = page-start clock ; ch2modeT0 = caption crossfade clock ; _clipTotal = one full goal-replay play (set at init) → page 0 advances exactly when the clip finishes ; CH2_DUR = per-page dwell [replay(unused, clip-timed)·lanedom(~2.1s grow + ~2.5s hold)·shotmap]
@@ -670,13 +670,10 @@
     var _v1=ss(cl((G-0.7)/0.2,0,1))*(1-ss(cl((G-1.1)/0.2,0,1)))>0.6;
     if(ch1dots){ ch1dots.style.opacity=(_v1?'1':'0'); ch1dots.style.pointerEvents=_v1?'auto':'none'; if(_v1){ ch1dots.style.top=(_ch1by/dpr+13)+'px'; ch1dots.style.bottom='auto'; } }   // pin just under the CV pitch (same 13px gap as chapter 3)
     if(urlT===null&&urlC1===null&&_v1){
-      if(!_ch1vis){ ch1modeAt=t; }
-      else if(ch1Mode===1){   // page 2 (trace estimation) runs EXACTLY one clip loop, then HARD-cuts to page 3 right on the clip restart (the seam fade hides the cut; page 3 opens on a fresh loop)
-        var _l1=(window.TRACK&&window.TRACK.segments.length>1)?window.TRACK.segments[1].frames.length:188;
-        if(window.TRACK&&(t-_trackT0)*window.TRACK.fps>=_l1){ ch1ModePrev=1; ch1Mode=2; ch1modeT0=t; ch1modeAt=t; _ch1hard=true; if(ch1dots)ch1dots.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',+x.dataset.m===2);}); }
-      }
-      else if(t-ch1modeAt>=CH1_DUR[ch1Mode]){   // page 1→2 and 3→1: timed + smooth fade
-        ch1ModePrev=ch1Mode; ch1Mode=(ch1Mode+1)%3; ch1modeT0=t; ch1modeAt=t; _ch1hard=false; if(ch1Mode===1)_trackT0=t;   // entering the tracking view → restart the clip loop
+      if(!_ch1vis){ ch1modeAt=t; _trackT0=t; }   // ch1 just appeared → (re)start the dwell timer + the tracking clip loop (opens on trace)
+      else if(t-ch1modeAt>=CH1_DUR[ch1Mode]){   // auto-advance sequence: trace(1) → keypoints(0) → tracking(2) → trace(1), all timed + smooth fade
+        ch1ModePrev=ch1Mode; ch1Mode=CH1_NEXT[ch1Mode]; ch1modeT0=t; ch1modeAt=t; _ch1hard=false;
+        if((ch1Mode===1||ch1Mode===2)&&!(ch1ModePrev===1||ch1ModePrev===2))_trackT0=t;   // entering the tracking clip from keypoints → restart the loop (trace↔tracking keep continuity)
         if(ch1dots)ch1dots.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',+x.dataset.m===ch1Mode);}); }
     }
     _ch1vis=_v1;
