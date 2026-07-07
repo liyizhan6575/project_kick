@@ -7,6 +7,7 @@
 <style>
   *{margin:0;box-sizing:border-box}
   @font-face{font-family:'Teko';src:url('assets/Teko.ttf') format('truetype-variations');font-weight:300 700;font-display:swap}
+  @font-face{font-family:'Chakra Petch';src:url('assets/ChakraPetch-Bold.ttf') format('truetype');font-weight:700;font-display:swap}   /* techy display font for the lane-dominance % numbers */
   body{background:#0a0a0a;color:#f2f2f2;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;overflow:hidden}
   .stage{height:100svh;position:relative}                /* guided pages: no scroll track — one gesture = one page */
   .panel{position:fixed;top:0;height:100svh;width:36vw;right:6vw;display:flex;flex-direction:column;justify-content:center;z-index:4;opacity:0;pointer-events:none}
@@ -41,12 +42,14 @@
   @media(max-width:760px){#ch4{padding:9vh 5vw 5vh;justify-content:flex-start}#ch4 .ch4head{margin-bottom:3.5vh}.ch4cards{gap:12px;max-width:440px}.ch4card{padding:16px 15px}.ch4card h3{font-size:18px;margin-bottom:8px}.ch4card p{font-size:14px}.ch4qr{margin-top:3.5vh}.ch4contact{flex-direction:column;align-items:flex-start;gap:7px;padding:13px 18px;max-width:440px}.ch4contact .ctm{font-size:15px}.ch4collab{position:static;align-self:center;align-items:center;margin-top:4vh}.ch4logos{gap:16px}.ch4logos span{width:88px}.ch4logos img{height:28px}.ch4logos em{font-size:10px}}
   @media(max-width:480px){#ch4{padding:5.5vh 5vw 3vh}#ch4 .ch4head{margin-bottom:2.2vh}.ch4head h2{font-size:clamp(24px,7.4vw,32px)}.ch4cards{grid-template-columns:1fr;max-width:330px;gap:8px}.ch4card{padding:11px 15px}.ch4card h3{font-size:15.5px;margin-bottom:5px}.ch4card p{font-size:12.5px;line-height:1.4}.ch4contact{max-width:330px;margin-top:12px;padding:11px 16px;gap:5px}.ch4collab{margin-top:2.4vh;gap:9px}.ch4logos img{height:23px}}   /* phone: single-column cards, tightened so the contact bar + partnerships still fit the viewport */
   @media(max-width:480px) and (max-height:740px){#ch4{padding:4.5vh 5vw 2.5vh}#ch4 .ch4head{margin-bottom:1.6vh}.ch4head h2{font-size:clamp(22px,6.8vw,28px)}.ch4cards{gap:6px}.ch4card{padding:9px 14px}.ch4card h3{font-size:14.5px;margin-bottom:4px}.ch4card p{font-size:12px;line-height:1.34}.ch4contact{margin-top:9px;padding:9px 14px}.ch4collab{margin-top:1.6vh}.ch4logos img{height:21px}}   /* short phones (SE): compact further so nothing clips */
-  #ch2dark{position:fixed;right:0;bottom:0;width:66vw;height:48vh;z-index:3;opacity:0;pointer-events:none;background:radial-gradient(115% 124% at 100% 100%,#0a0a0a 0%,#0a0a0a 54%,rgba(10,10,10,.46) 73%,rgba(10,10,10,0) 90%)}
+  #ch2dark{position:fixed;right:2.5vw;bottom:3vh;width:clamp(340px,32vw,560px);height:clamp(270px,34vh,360px);z-index:3;opacity:0;pointer-events:none;background:#0a0a0a;border-radius:30px;filter:blur(28px)}   /* soft-edged rounded black card behind the caption — tall enough to cover the "02 · VISUALIZATION" eyebrow through the paragraph, px-bounded so it doesn't balloon */
+  #ch2txt.ldml{left:5vw;right:auto}   /* lane-dom page: caption shifts LEFT so it clears the %-numbers, which sit on the right defensive end */
+  #ch2dark.ldml{left:2.5vw;right:auto}
   #ch2txt{position:fixed;right:5vw;bottom:6vh;z-index:4;opacity:0;pointer-events:none;max-width:46ch;text-align:left}
   #ch2txt .eb{font:600 12px/1 ui-monospace,monospace;letter-spacing:.3em;text-transform:uppercase;color:#fbbf24;margin-bottom:16px}
   #ch2txt h2{font:800 clamp(22px,2.6vw,36px)/1.18 sans-serif;color:#f2f2f2;margin:0 0 16px}
   #ch2txt p{color:#9aa0a8;font-size:clamp(17px,1.4vw,20px);line-height:1.55;margin:0}
-  @media(max-width:760px),(orientation:portrait){#ch2txt{left:6vw;right:6vw;max-width:none;bottom:8vh}}
+  @media(max-width:760px),(orientation:portrait){#ch2txt,#ch2txt.ldml{left:6vw;right:6vw;max-width:none;bottom:8vh}#ch2dark,#ch2dark.ldml{width:auto;left:4vw;right:4vw;height:clamp(220px,30vh,320px);border-radius:26px}}   /* portrait: caption sits full-width below the pitch, so cancel the lane-dom left-shift */
   /* portrait: panel/heading/body fonts scale with viewport HEIGHT (the portrait-dominant dimension), not width — so they grow on a tall half-screen and shrink on small phones */
   @media(orientation:portrait){
     .panel h2,#ch2txt h2{font-size:clamp(20px,3.0vh,34px)}
@@ -67,7 +70,13 @@
   .htext .slg{font:700 clamp(26px,7.2vw,48px)/1.05 'Teko',sans-serif;letter-spacing:.04em;text-transform:uppercase}
   .htext .slg .g{background:linear-gradient(100deg,#18c171,#2f8bff,#8b5cf6,#ef3b5b,#ff8a3b);-webkit-background-clip:text;background-clip:text;color:transparent}
   .htext .en{font:700 12px/1 ui-monospace,monospace;letter-spacing:.42em;color:#9aa0a8;margin-top:13px}
-  .htext .sc{font:600 11px/1 ui-monospace,monospace;letter-spacing:.3em;color:#9aa0a8;margin-top:26px;opacity:.7}
+  .htext .sc{margin-top:24px;display:flex;flex-direction:column;align-items:center;gap:1px}   /* scroll cue: three down-chevrons that pulse top→bottom so a new visitor knows to scroll */
+  .htext .sc .cv{width:30px;height:15px;display:block;overflow:visible;opacity:.22;animation:scPulse 1.5s cubic-bezier(.4,0,.6,1) infinite}
+  .htext .sc .cv:nth-child(2){animation-delay:.15s}
+  .htext .sc .cv:nth-child(3){animation-delay:.30s}
+  .htext .sc .cv polyline{fill:none;stroke:#cfd3da;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+  @keyframes scPulse{0%{opacity:.22}17%{opacity:1}44%,100%{opacity:.22}}
+  @media(prefers-reduced-motion:reduce){.htext .sc .cv{animation:none;opacity:.6}}
   .after{position:relative;z-index:2;padding:40vh 24px 30vh;text-align:center;color:#9aa0a8;font:600 13px/1.8 ui-monospace,monospace;letter-spacing:.1em}
   /* Anthropic-style halftone gradient — behind the CONTENT (text) side; fades in with the scene, OFF during the entrance */
   #htex{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;
@@ -75,7 +84,7 @@
     -webkit-mask-image:radial-gradient(78% 86% at 88% 50%,#000 0%,rgba(0,0,0,.4) 42%,transparent 72%);
     mask-image:radial-gradient(78% 86% at 88% 50%,#000 0%,rgba(0,0,0,.4) 42%,transparent 72%)}
   /* chapter-3 mode toggle — 3 dots under the Research board */
-  #ch3dots{position:fixed;bottom:9vh;left:71.5%;transform:translateX(-50%);z-index:6;display:flex;gap:15px;opacity:0;pointer-events:none;transition:opacity .35s}
+  #ch3dots{position:fixed;z-index:6;display:flex;flex-direction:column;gap:15px;opacity:0;pointer-events:none;transition:opacity .35s}   /* chapter-3: vertical column, JS-pinned just left of the board's left sideline */
   #ch3dots button{width:10px;height:10px;border-radius:50%;border:1.5px solid #5a616c;background:transparent;cursor:pointer;padding:0;transition:border-color .2s,background .2s,box-shadow .2s}
   #ch3dots button.on{background:#fbbf24;border-color:#fbbf24;box-shadow:0 0 9px rgba(251,191,36,.55)}
   #ch3dots button:hover{border-color:#cfd3da}
@@ -84,7 +93,12 @@
   #ch1dots button{width:10px;height:10px;border-radius:50%;border:1.5px solid #5a616c;background:transparent;cursor:pointer;padding:0;transition:border-color .2s,background .2s,box-shadow .2s}
   #ch1dots button.on{background:#fbbf24;border-color:#fbbf24;box-shadow:0 0 9px rgba(251,191,36,.55)}
   #ch1dots button:hover{border-color:#cfd3da}
-  @media(orientation:portrait){#ch1dots,#ch3dots{left:50%}}   /* portrait: pitch is centred, so the toggles centre too */
+  /* chapter-2 mode toggle — 2 dots under the broadcast pitch (goal replay · lane dominance) */
+  #ch2dots{position:fixed;bottom:9vh;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:15px;opacity:0;pointer-events:none;transition:opacity .35s}
+  #ch2dots button{width:10px;height:10px;border-radius:50%;border:1.5px solid #5a616c;background:transparent;cursor:pointer;padding:0;transition:border-color .2s,background .2s,box-shadow .2s}
+  #ch2dots button.on{background:#fbbf24;border-color:#fbbf24;box-shadow:0 0 9px rgba(251,191,36,.55)}
+  #ch2dots button:hover{border-color:#cfd3da}
+  @media(orientation:portrait){#ch1dots,#ch2dots,#ch3dots{left:50%}#ch3dots{flex-direction:row}}   /* portrait: pitch is centred, so the toggles centre too; ch3 reverts to a horizontal row */
   /* TOP BAR — persistent nav: logo left, click-to-navigate links; fades in after the entrance */
   .topbar{position:fixed;top:0;left:0;right:0;height:56px;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 clamp(16px,3vw,34px);opacity:0;pointer-events:none}
   .topbar .brand{flex:none;cursor:pointer;line-height:0}
@@ -125,12 +139,17 @@
     <button class="hamb" id="hamb" aria-label="Menu"><span></span><span></span><span></span></button>
   </header>
   <div id="htex"></div>
-  <div id="ch3dots"><button data-m="0" class="on" title="Pitch Control"></button><button data-m="1" title="xG model"></button><button data-m="2" title="Threat (xT)"></button></div>
-  <div id="ch1dots"><button data-m="0" class="on" title="Keypoints"></button><button data-m="1" title="Trace estimation"></button><button data-m="2" title="Tracking"></button></div>
+  <div id="ch3dots"><button data-m="0" class="on" title="Pitch Control"></button><button data-m="1" title="xG Model"></button><button data-m="2" title="xT Model"></button></div>
+  <div id="ch1dots"><button data-m="0" class="on" title="Keypoints Detection"></button><button data-m="1" title="Trace Estimation"></button><button data-m="2" title="Object Tracking"></button></div>
+  <div id="ch2dots"><button data-m="0" class="on" title="Goal replay"></button><button data-m="1" title="Lane dominance"></button><button data-m="2" title="Shot map"></button></div>
   <div class="stage"><canvas id="stage"></canvas></div>
   <div class="htext" id="htext">
     <div class="slg">Bridging <span class="g">Science</span> and Football.</div>
-    <div class="sc">SCROLL PLEASE ↓</div>
+    <div class="sc" aria-label="Scroll down">
+      <svg class="cv" viewBox="0 0 28 14" aria-hidden="true"><polyline points="3,3 14,11 25,3"/></svg>
+      <svg class="cv" viewBox="0 0 28 14" aria-hidden="true"><polyline points="3,3 14,11 25,3"/></svg>
+      <svg class="cv" viewBox="0 0 28 14" aria-hidden="true"><polyline points="3,3 14,11 25,3"/></svg>
+    </div>
   </div>
   <div class="panel" id="vizp">
     <div class="eb">01 · Computer Vision</div>
@@ -167,25 +186,27 @@
       <div class="cl">Partnerships</div>
       <div class="ch4logos">
         <span><img src="assets/logo_baidu_cloud.png" alt="Baidu AI Cloud"><em>Baidu AI Cloud</em></span>
-        <span><img src="assets/logo_baidu_app.png" alt="Baidu App"><em>Baidu App</em></span>
+        <span><img src="assets/logo_baidu_app.png?v=2" alt="Baidu App"><em>Baidu App</em></span>
         <span><img src="assets/logo_bilibili.png" alt="Bilibili"><em>Bilibili</em></span>
       </div>
     </div>
   </div>
   <div id="ch2dark"></div>
   <div id="ch2txt"><div class="eb">02 · Visualization</div><h2>We turn any feed into broadcast.</h2><p>Event data or full tracking — Sony Hawk-Eye, Stats Perform, StatsBomb, or whatever standard you already run — we take any of it and turn it into clean, broadcast-ready graphics.</p></div>
-  <div class="panel" id="ch3txt"><div class="eb">03 · Research</div><h2>More than an engineering company.</h2><p>Pitch control, expected goals, expected threat — we stand on the best of football science and build on it with our own value models, refined with the right method for each problem. We open-source the field's leading metrics on our <a id="ch3link" href="https://github.com/liyizhan6575/project_kick" target="_blank" rel="noopener">site</a>, and welcome every aspiring scholar and practitioner to join the research.</p></div>
-  <div id="ch1note">YOLO-pose is great — but our model measures <b>to the pixel</b>.</div>
+  <div class="panel" id="ch3txt"><div class="eb">03 · Research</div><h2>More than an engineering project.</h2><p>Pitch control, expected goals, expected threat — we stand on the best of football science and build on it with our own value models, refined with the right method for each problem. We open-source the field's leading metrics on <a id="ch3link" href="https://github.com/liyizhan6575/project_kick" target="_blank" rel="noopener">GitHub</a>, and welcome every aspiring scholar and practitioner to join the research.</p></div>
+  <div id="ch1note">Every visible landmark, <b>pinned to the pixel</b> — 99.7% recall, sub-pixel precision. Measured, not estimated.</div>
   <section class="after">[ PRODUCT SHOWCASE · PITCH AS CANVAS · VIS / CV / RESEARCH ]</section>
 
-<script src="assets/shapes.js?v=4"></script>
+<script src="assets/shapes.js?v=5"></script>
 <script src="assets/tracking.js?v=4"></script>
-<script src="assets/viz_clips_data.js?v=4"></script>
-<script src="assets/clip_engine.js?v=4"></script>
-<script src="assets/clip_renderer.js?v=9"></script>
-<script src="assets/clip_env.js?v=20"></script>
+<script src="assets/viz_clips_data.js?v=10"></script>
+<script src="assets/clip_engine.js?v=5"></script>
+<script src="assets/clip_renderer.js?v=29"></script>
+<script src="assets/clip_env.js?v=32"></script>
+<script src="assets/clip_lanedom.js?v=13"></script>
+<script src="assets/clip_shotmap.js?v=4"></script>
 <script src="assets/clip_pc.js?v=4"></script>
-<script src="assets/ch3_modes.js?v=27"></script>
+<script src="assets/ch3_modes.js?v=31"></script>
 <script>
 (function(){
   var cv=document.getElementById('stage'), ctx=cv.getContext('2d');
@@ -350,7 +371,8 @@
   function draw(t,G,shift,cvClip,clipT){
     ctx.clearRect(0,0,W,H);ctx.save();ctx.translate(shift||0,0);ctx.lineCap='round';ctx.lineJoin='round';
     camT=cl(G-1,0,1); camG=G;   // camT = broadcast-ness ; camG drives the 3-stage camera (incl. the vertical flip on 2→3)
-    _ch3by=P([0,0])[1];   // far-end (bottom) of the vertical board → the mode-toggle dots sit just under it
+    _ch3by=P([0,0])[1];   // far-end (bottom) of the vertical board → the mode-toggle dots sit just under it (portrait fallback)
+    var _p3l=P([52.5,-34]), _p3r=P([52.5,34]); _ch3lx=Math.min(_p3l[0],_p3r[0])+(shift||0); _ch3cy=P([52.5,0])[1];   // left sideline screen-x (+ the board's horizontal shift, which P() doesn't include) + board vertical centre → landscape: mode dots as a column just LEFT of the sideline
     _ch1by=Math.max(P([52.5,-34])[1], P([52.5,34])[1]);   // CV pitch bottom touchline → chapter-1 toggle dots sit just under it (same gap as chapter 3)
     _ch1ty=Math.min(P([52.5,-34])[1], P([52.5,34])[1]);   // CV pitch TOP touchline → the ch1 annotation sits just above it
     _ch1lx=Math.min(P([0,-34])[0], P([0,34])[0])+(shift||0);   // CV pitch LEFT edge (on-screen, incl. the pitch's left-shift) → the annotation "|" aligns to it
@@ -364,14 +386,15 @@
     var ch3o=ch3*ss(cl((G-2.8)/0.2,0,1));   // chapter-3 OVERLAY (PC / xG / xT colour) visibility — fades to 0 over G[2.8,3], BEFORE the camera flip back to ch2/1 gets going (camera barely moves there), so the coloured surface fades out FIRST, then the pitch transforms
     if(ch3>0.9){ if(ch3EnterT===null) ch3EnterT=t; } else if(ch3<0.3){ ch3EnterT=null; }   // mark when the checkers have settled on the board
     var pcReveal=urlPCR!==null?urlPCR:(ch3EnterT!==null?ss(cl((t-ch3EnterT-0.6)/0.5,0,1)):0);   // PC surface waits ~0.6s AFTER the checkers show, then fades in over 0.5s (?pcr overrides for capture)
-    var _mf=ss(cl((t-modeT0)/0.45,0,1));   // chapter-3 display-mode crossfade
+    var _mf=ss(cl((t-modeT0)/0.5,0,1));   // chapter-3 display-mode crossfade (0.5 s — unified across all three chapters)
     var mode0A=ch3Mode===0?_mf:(ch3ModePrev===0?1-_mf:0), mode1A=ch3Mode===1?_mf:(ch3ModePrev===1?1-_mf:0), mode2A=ch3Mode===2?_mf:(ch3ModePrev===2?1-_mf:0);
     var clipP=ss(cl((G-1.12)/0.45,0,1))*(1-ss(cl((G-2.0)/0.5,0,1)));   // Opta broadcast clip: chapter 2 only — fades out as the board flips to chapter 3 (decoupled from ch3 so it stays gone in chapter 4)
     var ccF=ss(cl((G-0.78)/0.18,0,1));   // centre-circle handoff: 4 entrance arcs → PROJECTED circle, completed during the entrance so the flip only TILTS it (no mid-flip crossfade)
     var detail=directJump?0:ss(cl(camT,0,1))*(1-ss(cl((G-2)/0.3,0,1)));   // green pitch + stadium fade in only over the LAST stretch of the 3→2 flip (G 2.3→2.0) — pitch rotates/flips first, stadium reveals as it nears the broadcast form; symmetric on 2→3 (fades out before the rotate)
+    var bcFade=1-ss(cl(_ch2dk,0,1));   // chapter-2 pages 2+3 (lane dom / shot map): fade the broadcast grass/clip to BLACK — over the FULL page-change ease (was compressed /0.42), so the grass fades at the SAME speed as the overlay cross-fades. Applied only to the broadcast draw alphas below, not to `detail`.
     var st=(window.CLIPENGINE&&CLIPENGINE.ready)?CLIPENGINE.state(clipT||0):null;   // engine state (clip + phase), reused by env / players / chrome
     var clipFade=st?Math.min(ss(cl(st.localT/0.5,0,1)),ss(cl((st.total-st.localT)/0.5,0,1))):1;   // fade clip content in/out at each clip boundary (no hard cut between different clips); shared pitch + bowl stay steady
-    if(detail>0.01&&window.CLIPENV) CLIPENV.draw(ctx, proj, projB, detail, camT.toFixed(3)+'_'+W, t, st);   // stadium bowl + green pitch + flags + score + logo — drawn FIRST, behind everything
+    if(detail>0.01&&window.CLIPENV) CLIPENV.draw(ctx, proj, projB, detail, camT.toFixed(3)+'_'+W, t, (bcFade>0.5?st:null), bcFade);   // stadium/seats/cyan roof stay FULLY lit; bcFade fades ONLY the green grass to black. st only when the grass is up (page 0) → the goal-celebration crowd sweep NEVER fires on the lane-dom / shot-map pages
     var p=ss(cl(G/0.79,0,1));   // p = entrance→pitch morph; widened so the shrink + forming occupies the slow early phase (~first 45% of the transition)
     // === pitch fades in as a whole while the 4 arcs close into the centre-circle ring (smooth, all-at-once — no centre-out write) ===
     var pf=ss(cl((p-0.06)/0.5,0,1));   // same window as the arc→ring collapse (mp): every line appears together
@@ -387,10 +410,10 @@
     }
     // === CHAPTER 1 + 3: Sony tracking (raw CV — "we read the game from video"). Ch1 = birdview dots; Ch3 = vertical tactical board with the pitch-control surface underneath ===
     var ch1t=ss(cl((G-0.60)/0.24,0,1))*(1-ss(cl((G-1.0)/0.2,0,1)));   // chapter-1 CV visibility
-    var ch1fo=ss(cl((t-ch1modeT0)/0.7,0,1)), ch1fi=ss(cl((t-ch1modeT0-0.45)/0.7,0,1));   // ch1 page swap: outgoing fades out first, incoming fades in after a beat (longer/softer, less abrupt)
+    var ch1fo=ss(cl((t-ch1modeT0)/0.5,0,1)), ch1fi=ch1fo;   // ch1 page swap: simultaneous 0.5 s crossfade — unified with chapters 2 & 3 (no more out-then-in stagger)
     var ch1m0A=ch1Mode===0?ch1fi:(ch1ModePrev===0?1-ch1fo:0);   // page 1 — keypoints
     // pages 2 (trace estimation) + 3 (full tracking) share ONE continuous clip: the view stays solid across the 2↔3 swap — only the fan fades out and the rings fill in (p3: 0=page2 fan+rings … 1=page3 all solid)
-    var inTrk=(ch1Mode===1||ch1Mode===2), wasTrk=(ch1ModePrev===1||ch1ModePrev===2), mt=ss(cl((t-ch1modeT0)/0.8,0,1)), mtP3=_ch1hard?1:mt;
+    var inTrk=(ch1Mode===1||ch1Mode===2), wasTrk=(ch1ModePrev===1||ch1ModePrev===2), mt=ss(cl((t-ch1modeT0)/0.5,0,1)), mtP3=_ch1hard?1:mt;
     var trackVis=inTrk?(wasTrk?1:ch1fi):(wasTrk?1-ch1fo:0);
     var p3=ch1Mode===2?(ch1ModePrev===1?mtP3:1):ch1Mode===1?(ch1ModePrev===2?1-mtP3:0):(ch1ModePrev===2?1:0);   // mtP3: a hard auto-cut jumps p3 to 1; a click ramps it smoothly
     if(urlC1!==null){ch1m0A=urlC1===0?1:0; trackVis=urlC1>0?1:0; p3=urlC1===2?1:0;}
@@ -422,21 +445,25 @@
     // === CHAPTER 4 · "Work with us" — penalty POV scene (goal · keeper · ball), fades in after the flip ===
     // chapter 4 content (KICK logo bottom-right) is drawn unshifted, after the pitch translate is restored — see end of draw()
     // === CHAPTER 2 + 3: the scoring clip's Tier-5 Opta checkers, same homography P() (broadcast → vertical board) ===
-    if(clipP>0.01&&st){
-      CLIPRENDER.draw(ctx, st, t, {P:P, proj:proj, sc:sc, W:W, H:H, cx:cx, cy:cy, dpr:dpr, alpha:clipP*clipFade});
+    if(clipP*bcFade>0.01&&st){
+      CLIPRENDER.draw(ctx, st, t, {P:P, proj:proj, sc:sc, W:W, H:H, cx:cx, cy:cy, dpr:dpr, alpha:clipP*clipFade*bcFade});
     }
-    if(detail>0.02&&st){ CLIPRENDER.stadiumClock(ctx, st, t, {proj:proj, detail:detail}); }   // pixel clock jumbotron
-    if(detail>0.05&&st){ CLIPRENDER.fireworks(ctx, st, {proj:proj, detail:detail*clipFade}); }          // twin goal-post fireworks (celebration only)
+    if(detail>0.02&&st){ CLIPRENDER.stadiumClock(ctx, st, t, {proj:proj, detail:detail}); }   // pixel clock jumbotron — stays lit on the lane-dom page (only the grass fades)
+    if(detail*clipFade>0.05&&st&&bcFade>0.5){ CLIPRENDER.fireworks(ctx, st, {proj:proj, detail:detail*clipFade}); }          // celebration fireworks + champagne — page 0 (goal replay) ONLY; never once the pitch blacks out for lane-dom / shot-map
+    _ch2by=Math.min(P([0,34])[1],P([105,34])[1]);   // broadcast FAR touchline (top of the tilted pitch) → the chapter-2 mode dots pin just ABOVE it
+    if(_ldmA>0.01&&window.CLIPLANEDOM){ CLIPLANEDOM.draw(ctx, P, _ldmA, _ldmGrowT, {sc:sc, dpr:dpr, W:W, H:H}); }   // page 2: lane dominance grows on the blacked-out pitch
+    if(_smA>0.01&&window.CLIPSHOTMAP){ CLIPSHOTMAP.draw(ctx, P, _smA, _smGrowT, {sc:sc, dpr:dpr, W:W, H:H}); }        // page 3: shot map — shots pop onto the blacked-out pitch
+    // (no persistent bright frame — the outer rectangle DIMS into lane-dom / shot-map, drawn there at the same dim level as their inner lines)
     // === 4 WC arcs → centre circle (shrink RARC→CCR, span 87.5°→90°, colour→grey, dim) ===
     var mp=ss(cl((p-0.06)/0.5,0,1)), aR=lp(RARC,CCR,mp), span=lp(87.5,90,mp)*DEG, STEP=span/24, dim=lp(1,0.6,mp);   // Tier-5 ARC_SPAN 87.5°, close into the circle by mp=1
-    var rot=rotAt(t)*(1-mp), appear=ss(Math.min(1,t/3.0)), settle=ss(cl((t-1.5)/0.5,0,1));   // Tier-5: appear over F_LOAD → blink(2s) → settle → snappy rotation (fades as they join)
+    var rot=rotAt(t)*(1-mp), appear=ss(Math.min(1,t/1.6)), settle=ss(cl((t-0.9)/0.4,0,1));   // Tier-5: appear over F_LOAD (sped up 3s→1.6s) → blink → settle → snappy rotation (fades as they join)
     ctx.lineWidth=lp(Math.max(1.2*dpr,RING*0.027), Math.max(1.3*dpr,sc*0.2), mp);   // Tier-5 EXACT arc stroke (matches measured 0.0376·R after AA) — 2.5× the ticks
     for(var j=0;j<4;j++){var a0=(90-j*90)*DEG-rot, bl=0.15+0.85*(0.5+0.5*Math.sin(2*Math.PI*(t*0.85-j*0.25))), base=appear*bl, tAl=base+(1-base)*settle;
       ctx.strokeStyle=mix(ARGB[j],GREY,mp);ctx.globalAlpha=cl(tAl*dim*(1-ccF),0,1);ctx.beginPath();   // arcs hand off to the projected circle during the entrance (ccF), gone before the flip
       for(var k=0;k<=24;k++){var ang=a0-k*STEP,x=cx+aR*Math.cos(ang),y=cy-aR*Math.sin(ang);k?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();}
     ctx.globalAlpha=1;
     // === grey ticks (fade out) ===
-    var tA=1-ss(cl(p/0.28,0,1)), front=ss(Math.min(1,t/3.0))*(N+FADE), rin=RING*0.893;   // Tier-5 loader: ticks SWEEP in over F_LOAD (~3s, front=load_p·(N+FADE)) then hold solid grey — no comet, no glow
+    var tA=1-ss(cl(p/0.28,0,1)), front=ss(Math.min(1,t/1.6))*(N+FADE), rin=RING*0.893;   // Tier-5 loader: ticks SWEEP in over F_LOAD (sped up ~3s→~1.6s) then hold solid grey — no comet, no glow
     if(tA>0.01){ctx.lineWidth=Math.max(0.7*dpr,RING*0.0108);ctx.strokeStyle='#6a6f78';
       for(var tt=0;tt<N;tt++){var sa=cl((front-tt)/FADE,0,1);if(sa<=0)continue;
         var an=(90-tt*(360/N))*DEG,c=Math.cos(an),s=Math.sin(an);ctx.globalAlpha=sa*tA;
@@ -475,23 +502,36 @@
 
   var htext=document.getElementById('htext'), vizp=document.getElementById('vizp'), htex=document.getElementById('htex'), htexX=88, htexY=50, ch4=document.getElementById('ch4'), ch4mailLink=ch4.querySelector('.ch4contact'), ch1note=document.getElementById('ch1note');
   var ch2txt=document.getElementById('ch2txt'), ch2dark=document.getElementById('ch2dark'), ch3txt=document.getElementById('ch3txt'), ch3link=document.getElementById('ch3link');
-  var ch3dots=document.getElementById('ch3dots'), ch3Mode=0, ch3ModePrev=0, modeT0=-99, _nowT=0, _ch3by=0;   // chapter-3 display mode (0=pitch control · 1=xG · 2=xT) + crossfade clock ; _ch3by = board bottom screen-y
+  var ch3dots=document.getElementById('ch3dots'), ch3Mode=0, ch3ModePrev=0, modeT0=-99, _nowT=0, _ch3by=0, _ch3lx=0, _ch3cy=0;   // chapter-3 display mode (0=pitch control · 1=xG · 2=xT) + crossfade clock ; _ch3by = board bottom screen-y ; _ch3lx/_ch3cy = left sideline x + board centre y (sideline dot column)
   var ch1dots=document.getElementById('ch1dots'), ch1Mode=0, ch1ModePrev=0, ch1modeT0=-99, ch1modeAt=0, _ch1vis=false, _ch1by=0, _ch1ty=0, _ch1lx=0, _trackT0=0, _ch1hard=false, CH1_DUR=[6,12,9];   // chapter-1 mode (0=keypoints · 1=trace estimation · 2=full tracking); _trackT0 = clip-loop start; CH1_DUR = auto dwell (page 2 instead runs exactly one clip loop); _ch1by = CV pitch bottom screen-y
+  var ch2dots=document.getElementById('ch2dots'), ch2Mode=0, _ch2prevT=0, _ch2by=0;   // chapter-2 page (0=goal replay · 1=lane dominance · 2=shot map)
+  var _ch2dk=0, _ldmRaw=0, _smRaw=0, _ldmA=0, _smA=0, _ch2ldT0=-99, _ch2smT0=-99, _ldmGrowT=0, _smGrowT=0;   // _ch2dk = pitch-blackout blend (any page>0) → bcFade ; _ldmRaw/_smRaw = per-page selectors ; _ldmA/_smA = their gated alphas ; grow clocks/starts for lane-dom · shot-map
+  var ch2modeAt=0, ch2modeT0=-99, _ch2vis=false, _ch2onL=false, _clipTotal=16, CH2_DUR=[16,4.6,8.5];   // ch2modeAt = page-start clock ; ch2modeT0 = caption crossfade clock ; _clipTotal = one full goal-replay play (set at init) → page 0 advances exactly when the clip finishes ; CH2_DUR = per-page dwell [replay(unused, clip-timed)·lanedom(~2.1s grow + ~2.5s hold)·shotmap]
   var modeAt=[0,0,0], MODE_DUR=[6,14,15.6], _ch3vis=false;   // per-mode auto-rotate dwell: PC 6s (one case) · xG 14s · xT 15.6s
   function setMode(m){ if(m===ch3Mode)return; ch3ModePrev=ch3Mode; ch3Mode=m; modeT0=_nowT; modeAt[m]=_nowT; ch3dots.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',+x.dataset.m===m);}); }
   ch3dots.querySelectorAll('button').forEach(function(b){ b.onclick=function(){ setMode(+b.dataset.m); }; });
+  // chapter-2 page change (goal replay · lane dominance · shot map). Shared by the auto-advance timer and dot clicks.
+  function ch2Advance(m){ ch2Mode=m; ch2modeAt=_nowT; ch2modeT0=_nowT;   // ch2modeT0 = caption crossfade clock (fades the copy while it hops L/R and while the overlays cross-fade)
+    if(m===1)_ch2ldT0=_nowT; else if(m===2)_ch2smT0=_nowT; else if(m===0)clipT0=_nowT;   // (re)start the active page's clock; returning to page 0 restarts the goal-replay clip so it always plays from the top
+    if(ch2dots)ch2dots.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',+x.dataset.m===m);}); }
+  if(ch2dots) ch2dots.querySelectorAll('button').forEach(function(b){ b.onclick=function(){ var m=+b.dataset.m; if(m!==ch2Mode) ch2Advance(m); }; });
   if(ch1dots) ch1dots.querySelectorAll('button').forEach(function(b){ b.onclick=function(){ var m=+b.dataset.m; if(m!==ch1Mode){ var fromKp=(ch1Mode===0); ch1ModePrev=ch1Mode; ch1Mode=m; ch1modeT0=_nowT; ch1modeAt=_nowT; _ch1hard=false; if(fromKp&&m>0)_trackT0=_nowT; ch1dots.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',+x.dataset.m===m);}); } }; });   // clicks are always SMOOTH; entering the tracking view from keypoints restarts the clip
   // ---- Native broadcast clips: per-clip position JSON, rendered through the flip camera on page 2 ----
   var clipT0=null;   // clip clock — restarts each time we enter the Viz page
   var _pcKey=-1, _pcGrid=null;   // pitch-control cache (chapter 3): recompute the surface only when the Sony frame advances
   var ch3EnterT=null;   // wall-clock when the chapter-3 board settled — delays the PC surface so the checkers show first
   CLIPENGINE.init(window.VIZ_CLIPS||[]);
+  if(window.CLIPLANEDOM&&CLIPENGINE.clips&&CLIPENGINE.clips[0]) CLIPLANEDOM.compute(CLIPENGINE.clips[0]);   // per-lane threat shares from the clip's ball path (chapter-2 page 2)
+  if(CLIPENGINE.clips&&CLIPENGINE.clips[0]&&CLIPENGINE.clips[0]._total) _clipTotal=CLIPENGINE.clips[0]._total;   // one full goal-replay play (build→shot→goal→celebration); page 0 advances right as this completes (no loop-and-cut)
+  if(document.fonts&&document.fonts.load) document.fonts.load('700 40px "Chakra Petch"');   // eagerly fetch the lane-dom % font so the canvas has it ready
   var urlP=(function(){var v=new URLSearchParams(location.search).get('p');return v===null?null:parseFloat(v);})();
   var urlT=(function(){var v=new URLSearchParams(location.search).get('t');return v===null?null:parseFloat(v);})();
   var urlMT=(function(){var v=new URLSearchParams(location.search).get('mt');return v===null?null:parseFloat(v);})();   // capture hook: force the chapter-4 logo morph clock
   var urlC1=(function(){var v=new URLSearchParams(location.search).get('c1');return v===null?null:parseInt(v);})();   // capture hook: force the chapter-1 mode (0=keypoints · 1=tracking · 2=camera coverage)
   var urlFA=(function(){var v=new URLSearchParams(location.search).get('fa');return v===null?null:parseFloat(v);})();   // capture hook: override the camera-fan half-angle (degrees)
   var urlPCR=(function(){var v=new URLSearchParams(location.search).get('pcr');return v===null?null:parseFloat(v);})();   // capture hook: force the pitch-control reveal
+  var urlLD=(function(){var v=new URLSearchParams(location.search).get('ld');return v===null?null:parseFloat(v);})();   // capture hook: force chapter-2 page 2 (lane dominance); value = grow seconds
+  var urlSM=(function(){var v=new URLSearchParams(location.search).get('sm');return v===null?null:parseFloat(v);})();   // capture hook: force chapter-2 page 3 (shot map); value = grow seconds
   if(new URLSearchParams(location.search).get('dj')==='1') directJump=true;   // capture hook: force the direct 1↔3 path
   (function(){var v=new URLSearchParams(location.search).get('cam'); if(v!==null){var a=v.split(',').map(parseFloat); CAM_P.eye=[a[0],a[1],a[2]]; CAM_P.tgt=[a[3],a[4],a[5]]; if(a[6])CAM_P.foc=a[6];}})();   // tuning hook: override the penalty camera via ?cam=ex,ey,ez,tx,ty,tz,foc
   (function(){var v=new URLSearchParams(location.search).get('m'); if(v!==null){ch3Mode=+v; ch3dots.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',+x.dataset.m===ch3Mode);});}})();   // capture hook: force a chapter-3 mode
@@ -505,7 +545,7 @@
     if(cur===0&&dir>0&&tNow<1.3) return;                     // let the entrance logo fully ignite before the first morph
     var n=cur+dir; if(n<0||n>=ANCH.length) return;
     directJump=(Math.min(cur,n)<2&&Math.max(cur,n)>2);   // jump that would cross the broadcast page → take the direct 1↔3 path
-    aDur=RM?1:(directJump?1000:(Math.max(cur,n)>=2?850:1400));   // flip (1↔2) snappy; entrance (0↔1) relaxed; direct 1↔3 jump a touch longer
+    aDur=RM?1:(directJump?1000:(Math.min(cur,n)===1&&Math.max(cur,n)===2?680:(Math.max(cur,n)>=2?850:1400)));   // 1↔2 flip fastest (680); other flips 850; entrance (0↔1) relaxed (1400); direct 1↔3 jump 1000
     gFrom=Gv; gTo=ANCH[n]; aT0=now(); animing=true; cur=n; updateNav();
   }
   addEventListener('wheel',function(e){e.preventDefault(); if(Math.abs(e.deltaY)>4) step(e.deltaY>0?1:-1);},{passive:false});
@@ -520,7 +560,7 @@
   var topbar=document.getElementById('topbar'), navlinks=document.querySelectorAll('#nav a'), hamb=document.getElementById('hamb'), navEl=document.getElementById('nav');
   function closeMenu(){ navEl.classList.remove('open'); hamb.classList.remove('open'); }
   function updateNav(){for(var i=0;i<navlinks.length;i++)navlinks[i].classList.toggle('on',+navlinks[i].dataset.page===cur);}
-  function goTo(n){n=Math.round(cl(n,0,ANCH.length-1)); if(animing||now()-lastEnd<150||n===cur)return; directJump=(Math.min(cur,n)<2&&Math.max(cur,n)>2); aDur=RM?1:(directJump?1000:(Math.max(cur,n)>=2?850:1400)); gFrom=Gv; gTo=ANCH[n]; aT0=now(); animing=true; cur=n; updateNav();}
+  function goTo(n){n=Math.round(cl(n,0,ANCH.length-1)); if(animing||now()-lastEnd<150||n===cur)return; directJump=(Math.min(cur,n)<2&&Math.max(cur,n)>2); aDur=RM?1:(directJump?1000:(Math.min(cur,n)===1&&Math.max(cur,n)===2?680:(Math.max(cur,n)>=2?850:1400))); gFrom=Gv; gTo=ANCH[n]; aT0=now(); animing=true; cur=n; updateNav();}
   Array.prototype.forEach.call(document.querySelectorAll('[data-page]'),function(el){el.addEventListener('click',function(){goTo(+el.dataset.page); closeMenu();});});
   updateNav();
   hamb.addEventListener('click',function(e){ e.stopPropagation(); var o=!navEl.classList.contains('open'); navEl.classList.toggle('open',o); hamb.classList.toggle('open',o); });
@@ -548,7 +588,8 @@
     vizp.style.opacity=textP.toFixed(2); vizp.style.transform='translateX('+lp(40,0,textP).toFixed(0)+'px)';
     ch1note.style.opacity=textP.toFixed(2); ch1note.style.transform='translateY('+lp(8,0,textP).toFixed(0)+'px)';
     if(_ch1lx){ ch1note.style.left=(_ch1lx/dpr)+'px'; ch1note.style.top='auto'; ch1note.style.bottom=(H/dpr-_ch1ty/dpr+14)+'px'; }   // "|" on the pitch left edge; annotation bottom sits 14px above the pitch top
-    var ch2P=ss(cl((G-1.85)/0.13,0,1))*(1-ss(cl((G-2.05)/0.13,0,1)));   // chapter-2 copy: in as the stadium settles to broadcast (~G2), out as the 2→3 flip begins
+    var ch2P=ss(cl((G-1.85)/0.13,0,1))*(1-ss(cl((G-2.05)/0.13,0,1)));   // chapter-2 copy + backdrop: FIXED bottom-right on EVERY page (no hop, no teleport); only fades in/out with the CHAPTER. The lane-dom numbers/arrows are pulled in to clear it.
+    ch2txt.classList.remove('ldml'); ch2dark.classList.remove('ldml');
     ch2txt.style.opacity=ch2dark.style.opacity=ch2P.toFixed(2);
     var ch3P=ss(cl((G-2.7)/0.28,0,1))*(1-ss(cl((G-3.32)/0.28,0,1)));   // chapter-3 copy (left): in as the Research board settles (~G3), out toward chapter 4
     ch3txt.style.opacity=ch3P.toFixed(2); ch3txt.style.transform='translateX('+lp(-40,0,ch3P).toFixed(0)+'px)'; ch3link.style.pointerEvents=ch3P>0.5?'auto':'none';
@@ -557,7 +598,33 @@
     var _hx=portrait?50:(G<2?88:12), _hy=portrait?89:50, _hw=portrait?98:78, _hh=portrait?50:86;   // landscape: dots beside the pitch (RIGHT on ch1 / LEFT on ch3). Portrait: pitch is up top, so the glow drops LOW (behind the bottom text) — never on the pitch
     if(_hx!==htexX||_hy!==htexY){ htexX=_hx; htexY=_hy; htex.style.maskImage=htex.style.webkitMaskImage='radial-gradient('+_hw+'% '+_hh+'% at '+_hx+'% '+_hy+'%,#000 0%,rgba(0,0,0,.4) 42%,transparent 72%)'; }
     _nowT=t; var _c3=ss(cl((G-2.0)/0.5,0,1))*(1-ss(cl((G-3.05)/0.3,0,1))); ch3dots.style.opacity=(_c3>0.6?'1':'0'); ch3dots.style.pointerEvents=_c3>0.6?'auto':'none';   // chapter-3 mode toggle: only on the Research board — fades out into chapter 4 (logo) like the board itself
-    if(_c3>0.01){ ch3dots.style.top=(_ch3by/dpr+13)+'px'; ch3dots.style.bottom='auto'; }   // pin the dots just under the board's bottom edge
+    if(_c3>0.01){
+      if(H>W){ ch3dots.style.left=''; ch3dots.style.transform='translateX(-50%)'; ch3dots.style.top=(_ch3by/dpr+13)+'px'; ch3dots.style.bottom='auto'; }   // portrait: horizontal row just under the board (fallback)
+      else { ch3dots.style.left=Math.max(10,_ch3lx/dpr-16)+'px'; ch3dots.style.transform='translate(-100%,-50%)'; ch3dots.style.top=(_ch3cy/dpr)+'px'; ch3dots.style.bottom='auto'; }   // landscape: vertical column just LEFT of the board's left sideline, centred on the pitch
+    }
+    // ── chapter-2 pages (goal replay → lane dominance → shot map → heatmap): auto-advancing, black-fade + per-page grow clocks ──
+    var _c2=ss(cl((G-1.72)/0.18,0,1))*(1-ss(cl((G-2.08)/0.18,0,1)));   // broadcast-settled visibility
+    if(_c2<0.4&&ch2Mode!==0){ ch2Mode=0; _ch2ldT0=-99; _ch2smT0=-99; ch2modeT0=t; ch2dots.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',+x.dataset.m===0);}); }   // leaving chapter 2 → reset to the goal replay
+    var _c2dt=Math.max(0,Math.min(0.05,t-_ch2prevT)); _ch2prevT=t;
+    var _c2k=_c2dt?1-Math.pow(0.5,_c2dt/0.16):0;                       // exponential ease (~0.5 s crossfade — matches chapters 1 & 3)
+    _ch2dk +=((ch2Mode>0?1:0)-_ch2dk)*_c2k;                            // pitch blackout (any page>0) → drives bcFade
+    _ldmRaw+=((ch2Mode===1?1:0)-_ldmRaw)*_c2k;                         // per-page selectors cross-fade as the page changes
+    _smRaw +=((ch2Mode===2?1:0)-_smRaw)*_c2k;
+    var _dkGate=ss(cl(_ch2dk,0,1));                                    // overlays fade in/out in LOCKSTEP with the blackout (same speed as the grass fade) — no separate staging delay
+    _ldmA=_ldmRaw*_dkGate; _smA=_smRaw*_dkGate;
+    _ldmGrowT=(_ch2ldT0>=0)?Math.max(0,t-_ch2ldT0-0.38):0;            // lane-dom bands/%/arrows grow after the ~0.38 s black fade
+    _smGrowT =(_ch2smT0>=0)?Math.max(0,t-_ch2smT0-0.38):0;            // shot-map dots pop in after the ~0.38 s black fade
+    if(urlLD!==null){ ch2Mode=1; _ch2dk=1; _ldmA=1; _smA=0; _ldmGrowT=urlLD; _ch2onL=true; }   // capture hook: force lane dominance (caption LEFT)
+    if(urlSM!==null){ ch2Mode=2; _ch2dk=1; _ldmA=0; _smA=1; _smGrowT=urlSM; _ch2onL=false; }   // capture hook: force shot map
+    // auto-advance the pages, then loop 0→1→2→0. Page 0 (goal replay) advances the instant the clip finishes ONE
+    // full play (build→shot→goal→celebration) — measured off the clip clock so it never loops-and-cuts; the other pages use a timed dwell.
+    if(urlT===null&&urlLD===null&&urlSM===null&&_c2>0.6){
+      if(!_ch2vis){ ch2modeAt=t; }
+      else if(ch2Mode===0){ if(clipT0!==null && (t-clipT0)>=_clipTotal-1.8) ch2Advance(1); }   // advance once the (slower) crowd sweep has finished crossing (~celeb 4.5s) — the sweep fills the time, so the pitch never just sits empty
+      else if(t-ch2modeAt>=CH2_DUR[ch2Mode]){ ch2Advance((ch2Mode+1)%3); }
+    }
+    _ch2vis=(_c2>0.6);
+    if(ch2dots){ ch2dots.style.opacity=(_c2>0.6?'1':'0'); ch2dots.style.pointerEvents=_c2>0.6?'auto':'none'; if(_c2>0.6&&_ch2by){ ch2dots.style.top=(_ch2by/dpr-26)+'px'; ch2dots.style.bottom='auto'; } }   // pin ABOVE the pitch (26px over the far touchline)
     var _vis=_c3>0.6;   // auto-rotate the three Research displays — each plays one loop, then advances; entering restarts the active mode's clock
     if(urlT===null&&_vis){ if(!_ch3vis) modeAt[ch3Mode]=t; else if(t-modeAt[ch3Mode]>=MODE_DUR[ch3Mode]) setMode((ch3Mode+1)%3); }
     _ch3vis=_vis;

@@ -32,6 +32,7 @@ window.CH3 = (function(){
   function drawXG(ctx, P, alpha, t, W, H, dpr, sc){
     if(alpha<=0.01) return;
     var fscale=(sc&&H>W)?cl(1.7*sc/(11*dpr),0.7,1):1;   // portrait: shrink labels to track the smaller pitch; landscape stays 1:1
+    var uf=Math.abs(P([105,0])[1]-P([0,0])[1])*0.0145;   // ONE base font tied to the board's ON-SCREEN length → distance/angle/defender/verdict + feature readout track the actual pitch size in EVERY window (full / half / portrait), never oversized
     var at=t%14.0;
     var pSpot=ss(cl(at/0.8,0,1));
     var distLen=ss(cl((at-1.0)/1.2,0,1)), distA=alpha*(1-ss(cl((at-2.6)/0.5,0,1)));   // distance draws in, holds, fades before the sweep
@@ -47,8 +48,8 @@ window.CH3 = (function(){
     // --- distance: dashed line shot→goal; number sits OFF the line (perpendicular offset) ---
     if(distLen>0.001&&distA>0.01){ ctx.globalAlpha=distA; ctx.setLineDash([5*dpr,4*dpr]); ctx.strokeStyle='rgba(230,234,244,0.78)'; ctx.lineWidth=1.4*dpr;
       ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(lp(s[0],gc[0],distLen),lp(s[1],gc[1],distLen)); ctx.stroke(); ctx.setLineDash([]);
-      if(distLen>0.55){ ctx.globalAlpha=distA*ss(cl((distLen-0.55)/0.4,0,1)); ctx.fillStyle='#e6eaf4'; ctx.font='600 '+(11*dpr*fscale)+'px ui-monospace,monospace'; ctx.textAlign='center';
-        ctx.fillText(DIST_M.toFixed(1)+' m', lp(s[0],gc[0],0.5)+perpx*18*dpr, lp(s[1],gc[1],0.5)+perpy*18*dpr); } }
+      if(distLen>0.55){ ctx.globalAlpha=distA*ss(cl((distLen-0.55)/0.4,0,1)); ctx.fillStyle='#e6eaf4'; ctx.font='600 '+uf+'px ui-monospace,monospace'; ctx.textAlign='center';
+        ctx.fillText(DIST_M.toFixed(1)+' m', lp(s[0],gc[0],-0.22), lp(s[1],gc[1],-0.22)); } }   // label sits just BEYOND the shot (away from the goal), in open grass clear of the box / 6-yard / arc lines
 
     // --- angle: line to the RIGHT post fades in, THEN the wedge sweeps across; label nudged LEFT clear of the fan ---
     if(lineIn>0.001&&angA>0.01){
@@ -57,7 +58,7 @@ window.CH3 = (function(){
       if(sweep>0.001){ var swp=[lp(pb[0],pt[0],sweep),lp(pb[1],pt[1],sweep)];
         ctx.globalAlpha=angA*0.15; ctx.fillStyle='#fbbf24'; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(pb[0],pb[1]); ctx.lineTo(swp[0],swp[1]); ctx.closePath(); ctx.fill();
         ctx.globalAlpha=angA*0.9; ctx.strokeStyle='#fbbf24'; ctx.lineWidth=1.7*dpr; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(swp[0],swp[1]); ctx.stroke(); }
-      if(sweep>0.5){ ctx.globalAlpha=angA*ss(cl((sweep-0.5)/0.4,0,1)); ctx.fillStyle='#fbbf24'; ctx.font='600 '+(11*dpr*fscale)+'px ui-monospace,monospace'; ctx.textAlign='center';
+      if(sweep>0.5){ ctx.globalAlpha=angA*ss(cl((sweep-0.5)/0.4,0,1)); ctx.fillStyle='#fbbf24'; ctx.font='600 '+uf+'px ui-monospace,monospace'; ctx.textAlign='center';
         ctx.fillText(ANG_DEG.toFixed(0)+'°', lp(s[0],gc[0],0.24)+perpx*16*dpr, lp(s[1],gc[1],0.24)+perpy*16*dpr); } }
 
     // --- after the sweep: FLASH IN the keeper + nearest defenders, each tagged with its location at the top-right ---
@@ -67,27 +68,27 @@ window.CH3 = (function(){
       if(fr>0&&fr<1){ ctx.globalAlpha=a*(1-fr)*0.8; ctx.strokeStyle=d.c; ctx.lineWidth=1.4*dpr; ctx.beginPath(); ctx.arc(dp[0],dp[1],(4+11*fr)*dpr,0,6.283); ctx.stroke(); }   // expanding flash ring
       ctx.globalAlpha=a; ctx.fillStyle=d.c; ctx.beginPath(); ctx.arc(dp[0],dp[1],(d.gk?5.2:4.6)*dpr,0,6.283); ctx.fill();
       ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.lineWidth=1.1*dpr; ctx.stroke();
-      ctx.globalAlpha=a*0.92; ctx.fillStyle='#b4bac3'; ctx.font='600 '+(8.5*dpr*fscale)+'px ui-monospace,monospace'; ctx.textAlign='left'; ctx.fillText(d.lbl, dp[0]+7*dpr, dp[1]-6*dpr);
+      ctx.globalAlpha=a*0.92; ctx.fillStyle='#b4bac3'; ctx.font='600 '+(uf*0.76)+'px ui-monospace,monospace'; ctx.textAlign='left'; ctx.fillText(d.lbl, dp[0]+7*dpr, d.gk?dp[1]+13*dpr:dp[1]-6*dpr);   // GK sits near the top goal line → drop its label BELOW the dot so it clears the edge
     }
 
-    // --- feature readout (top-half RIGHT, clear of pitch lines): YELLOW titles, light-grey values, aligned column, shell-typed ---
-    if(pPar>0&&parA>0.01){
-      var maxT=0,maxV=0,tot=0; PARAMS.forEach(function(p){ maxT=Math.max(maxT,p[0].length); maxV=Math.max(maxV,p[1].length); tot+=p[0].length+p[1].length; });
+    // --- feature readout (top-half RIGHT, clear of pitch lines): YELLOW titles fade in together, THEN light-grey values type in one by one ---
+    if(at>6.4&&parA>0.01){
+      var maxT=0,maxV=0; PARAMS.forEach(function(p){ maxT=Math.max(maxT,p[0].length); maxV=Math.max(maxV,p[1].length); });
       var col=maxT+2, ncell=col+maxV;
       var x0=P([73.25,0])[0], availW=P([73.25,-34])[0]-x0-6*dpr;   // pitch centre line → right sideline
       ctx.font='600 10px ui-monospace,monospace'; var u=ctx.measureText('0').width/10;
-      var fs=Math.min(availW/(ncell*u), 9*dpr*fscale);             // shrink so the block still fits inside the pitch (and tracks the portrait label scale)
-      ctx.font='600 '+fs+'px ui-monospace,monospace'; var chW=ctx.measureText('0').width;
-      var lh=12*dpr*fscale, shown=Math.floor(pPar*tot), cum=0;
-      var lx=x0, ly=P([73.25,0])[1]-3*lh+5*dpr;   // LEFT EDGE on the pitch's horizontal centre line; vertically centred between penalty arc and centre circle
-      ctx.globalAlpha=parA; ctx.textAlign='left';
-      for(var li=0;li<PARAMS.length;li++){ var ti=PARAMS[li][0], va=PARAMS[li][1], lc=ti.length+va.length, vis=cl(shown-cum,0,lc), ty=ly+li*lh;
-        if(vis>0){
-          ctx.fillStyle='#fbbf24'; ctx.fillText(ti.slice(0,Math.min(vis,ti.length)), lx, ty);
-          if(vis>ti.length){ ctx.fillStyle='#c8ccd2'; ctx.fillText(va.slice(0,vis-ti.length), lx+col*chW, ty); }
-          if(vis<lc&&pPar<1){ var cx=vis<ti.length?lx+vis*chW:lx+col*chW+(vis-ti.length)*chW; ctx.fillStyle=vis<ti.length?'#fbbf24':'#c8ccd2'; ctx.fillText('▋', cx, ty); }
-        }
-        cum+=lc; } }
+      var fs=Math.min(availW/(ncell*u), uf);                      // sized to BOTH the pitch width and the shared viewport base → scales with the screen, matches the on-pitch labels
+      ctx.font='600 '+fs+'px ui-monospace,monospace'; var chW=ctx.measureText('0').width, lh=fs*1.42;
+      var lx=x0, ly=P([73.25,0])[1]-3*lh;   // LEFT EDGE on the pitch's centre line; block vertically centred there
+      var titleA=ss(cl((at-6.4)/0.6,0,1));                        // 1) ALL feature titles fade in together
+      var totV=0; PARAMS.forEach(function(p){totV+=p[1].length;});
+      var valShown=Math.floor(cl((at-7.1)/2.4,0,1)*totV), vcum=0;  // 2) THEN each value writes in, one entry after another
+      ctx.textAlign='left';
+      for(var li=0;li<PARAMS.length;li++){ var ti=PARAMS[li][0], va=PARAMS[li][1], ty=ly+li*lh, vv=cl(valShown-vcum,0,va.length);
+        ctx.globalAlpha=parA*titleA; ctx.fillStyle='#fbbf24'; ctx.fillText(ti, lx, ty);
+        if(vv>0){ ctx.globalAlpha=parA; ctx.fillStyle='#c8ccd2'; ctx.fillText(va.slice(0,vv), lx+col*chW, ty); }
+        if(titleA>0.99&&valShown>=vcum&&valShown<vcum+va.length){ ctx.globalAlpha=parA; ctx.fillStyle='#c8ccd2'; ctx.fillText('▋', lx+col*chW+vv*chW, ty); }   // caret on the row currently typing
+        vcum+=va.length; } }
 
     // --- shot spot (the marker that becomes the ball) ---
     ctx.globalAlpha=alpha*pSpot*(1-pBall);
@@ -102,9 +103,9 @@ window.CH3 = (function(){
     // --- verdict: one line, right on top of the pitch — number's right edge aligned to the pitch's RIGHT sideline, label LEFT of it ---
     { var ny=P([105,0])[1]-13*dpr, nvUp=ss(cl((at-8.5)/0.4,0,1)), nvDown=ss(cl((at-12.1)/0.35,0,1)), val=(XG*nvUp*(1-nvDown)).toFixed(2), xR=P([105,-34])[0], gap=10*dpr;   // label ALWAYS on top; number 0.00 → flips to 0.05 once all metrics are shown → back to 0.00 after the goal fades
       ctx.globalAlpha=alpha; ctx.textAlign='right';
-      ctx.font='800 '+(H*0.015*fscale)+'px ui-monospace,monospace'; ctx.fillStyle='#fbbf24'; ctx.fillText(val, xR, ny);
+      ctx.font='800 '+(uf*1.4)+'px ui-monospace,monospace'; ctx.fillStyle='#fbbf24'; ctx.fillText(val, xR, ny);
       var vw=ctx.measureText(val).width;
-      ctx.font='600 '+(11*dpr*fscale)+'px ui-monospace,monospace'; ctx.fillStyle='#9aa0a8'; ctx.fillText('EXPECTED GOAL', xR-vw-gap, ny); }
+      ctx.font='600 '+uf+'px ui-monospace,monospace'; ctx.fillStyle='#9aa0a8'; ctx.fillText('EXPECTED GOAL', xR-vw-gap, ny); }
     ctx.restore();
   }
 

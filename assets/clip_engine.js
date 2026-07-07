@@ -24,8 +24,8 @@ window.CLIPENGINE = (function(){
   function measure(c){
     var bu=0; for(var f=1; f<c.nf; f++) bu+=dwell(c,f);   // segment (f-1 -> f) at real Opta timing; only the pre-shot approach is trimmed
     c._bu=bu; c._lead=c.set_piece?0.12:LEAD;   // set-piece: almost no pre-roll — the ball whips off the corner immediately (no static hold on the touchline)
-    var mouthM=[c.mouth[0]*105,(c.mouth[1]-0.5)*68], lb=c.frames[c.nf-1].ball||mouthM;
-    c._shotT=Math.max(0.35,Math.min(1.2,Math.hypot(mouthM[0]-lb[0],mouthM[1]-lb[1])/SHOT_VEL));   // shot flight time → flies at SHOT_VEL (faster than passes), clamped so very short/long shots stay sane
+    var mouthM=[c.mouth[0]*105,(c.mouth[1]-0.5)*68], lb=c.frames[c.nf-1].ball||mouthM, _sd=Math.hypot(mouthM[0]-lb[0],mouthM[1]-lb[1]);
+    c._shotT=_sd<3?0.06:Math.max(0.35,Math.min(1.2,_sd/SHOT_VEL));   // shot flight time; if the ball already reached the goal during build-up (Last Row goals) the shot beat is vestigial → near-zero so the celebration starts right away (no dead hang)
     if(c.set_piece && !c.is_goal){ c._tail=CHK_LEAD+CHK; }              // non-goal set-piece: checker hold only
     else                         { c._tail=c._shotT+FLASH+CELEB; }      // GOAL (open-play OR corner): header/shot flies in → ball fades → celebration
     c._total=c._lead+bu+c._tail;

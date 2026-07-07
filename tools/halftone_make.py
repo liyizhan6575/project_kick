@@ -28,10 +28,16 @@ INK_THR = 0.14      # drop grid cells fainter than this
 
 # ---- logo: reuse existing dots (centre + fold aspect into y) -------------------
 def load_logo():
-    txt = (ASSETS / "halftone.js").read_text()
+    hj = ASSETS / "halftone.js"
+    if hj.exists():
+        txt = hj.read_text()
+        obj = json.loads(txt[txt.index("{"): txt.rindex("}") + 1])
+        asp = obj["aspect"]
+        return [(x - 0.5, (y - 0.5) / asp, r) for x, y, r in obj["dots"]]
+    # halftone.js is gone — reuse the already-baked logo dots from shapes.js (already in the centred frame)
+    txt = (ASSETS / "shapes.js").read_text()
     obj = json.loads(txt[txt.index("{"): txt.rindex("}") + 1])
-    asp = obj["aspect"]
-    return [(x - 0.5, (y - 0.5) / asp, r) for x, y, r in obj["dots"]]
+    return [(x, y, r) for x, y, r in obj["shapes"][obj["names"].index("logo")]]
 
 # ---- ink mask: works for transparent silhouettes AND opaque-background pictograms
 def ink_map(rgba):
