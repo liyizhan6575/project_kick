@@ -12,7 +12,7 @@ window.CLIPENV = (function(){
   function hash01(i){return (((i*1103515245+12345)%1000)+1000)%1000/1000;}   // deterministic per-seat dither
 
   // ---------- bowl geometry (world metres) ----------
-  var XL=-7, XR=112, YN=41, YB=-41, R=22, BASE=3, DEPTH=34, HH=23, ROWS=18;
+  var XL=-11, XR=116, YN=51, YB=-41, R=22, BASE=3, DEPTH=34, HH=23, ROWS=18;   // asymmetric so the pitch reads CENTRED in perspective: FAR (north) stand pushed out more (YN 51) since perspective compresses that gap; near (south) stand at the original 7 m; ends pushed out
   var GRASS_A=[0x2b/255,0x44/255,0x2b/255], GRASS_B=[0x20/255,0x33/255,0x20/255];
   var SEAT_FRONT=[0.82,0.90,1.00], SEAT_BACK=[0.36,0.44,0.62], LED=[0.45,0.85,1.0];
   var SEAT_K=210;   // seat-dot radius constant (px·metre) — tuned to the reference
@@ -44,7 +44,7 @@ window.CLIPENV = (function(){
   for(var _sx=0;_sx<SEATS.length;_sx++){ var _wx=SEATS[_sx][0]; if(_wx<SEAT_XLO)SEAT_XLO=_wx; if(_wx>SEAT_XHI)SEAT_XHI=_wx; }
   SEAT_XLO-=14; SEAT_XHI+=14;
 
-  function nfa(wy){ var b=cl((wy+77)/14,0,1); return wy<-39 ? b*0.72 : b; }   // near-side dissolve: south stand wraps the bowl, rendered slightly dimmer (×0.72) than far/sides but clearly present; back rows nearest the lens (wy<-77) still fade out
+  function nfa(wy){ var b=cl((wy+77)/14,0,1); return wy<-39 ? b*0.72 : b; }   // near-side dissolve: south stand dimmer (×0.72), back rows nearest the lens fade out
 
   // seat-projection cache (re-project only when camera/width changes)
   var _cache={key:'',pts:null};
@@ -80,7 +80,7 @@ window.CLIPENV = (function(){
     if(sweep){ var pe=smoother(sweep.cprog), R=SEAT_XHI-SEAT_XLO, OV=R*0.42; front = sweep.dir<0 ? (SEAT_XHI+OV)-(R+2*OV)*pe : (SEAT_XLO-OV)+(R+2*OV)*pe; sgn = sweep.dir<0?1:-1; }   // front travels OFF one edge → OFF the other (overshoot) so the wave ENTERS and fully EXITS instead of parking lit at the far edge
     function paintSeat(q){ if(q[3]<=0.02)return;
       var col=q[4], rad=cl(SEAT_K/q[2],0.45,2.8), al=A*0.6*q[3];
-      if(sweep){ var behind=(q[5]-front)*sgn, sw=cl(behind/14+1,0,1)*Math.exp(-Math.max(behind,0)/22), it=sw*sweep.amp*(0.5+0.5*hash01(q[6]));
+      if(sweep){ var behind=(q[5]-front)*sgn, sw=cl(behind/22+1,0,1)*Math.exp(-Math.max(behind,0)/40), it=sw*sweep.amp*(0.5+0.5*hash01(q[6]));   // WIDER band (lead 14→22, tail 22→40) → a much larger area of the crowd lights up at once
         if(it>0.01){ col=lerpRGB(col,sweep.hot,it); rad*=(1+0.8*it); al=cl(al*(1+0.9*it),0,1); } }
       ctx.globalAlpha=al; ctx.fillStyle=rgb(col); ctx.beginPath(); ctx.arc(q[0],q[1],rad,0,6.2832); ctx.fill(); }
     ctx.save(); ctx.beginPath(); for(var rc=0;rc<NP;rc++){ var rp=BC.roof[rc]; rc?ctx.lineTo(rp[0],rp[1]):ctx.moveTo(rp[0],rp[1]); } ctx.closePath(); ctx.clip();
@@ -96,18 +96,27 @@ window.CLIPENV = (function(){
       ctx.beginPath(); ctx.moveTo(arc[0][0],arc[0][1]); for(var ka2=1;ka2<arc.length;ka2++) ctx.lineTo(arc[ka2][0],arc[ka2][1]);
       ctx.lineTo(ctx.canvas.width,0); ctx.lineTo(0,0); ctx.closePath(); ctx.fill(); ctx.globalAlpha=1; }
     // roof neon (front_w @ z32) — frozen via the bowl cache (stays still through the flip) + near-side dissolve
-    ctx.globalCompositeOperation='lighter'; var _led=(LED[0]*255|0)+','+(LED[1]*255|0)+','+(LED[2]*255|0);
+    var _led=(LED[0]*255|0)+','+(LED[1]*255|0)+','+(LED[2]*255|0), _rlc=ctx.lineCap; ctx.lineCap='round'; ctx.lineJoin='round';
+    // OPAQUE CORE first (source-over): a solid cyan roof line so seat dots can never show THROUGH it or sit on top of it
+    ctx.globalCompositeOperation='source-over'; ctx.lineWidth=3.6;
+    for(var nc=0;nc<NP;nc++){ var wc0=FRONTW[nc], wc1=FRONTW[(nc+1)%NP], fac=nfa((wc0[1]+wc1[1])/2); if(fac<=0.02) continue;
+      var ssc=((wc0[1]+wc1[1])/2 < -25) ? (ckT<0.999 ? (1-smoother(cl((A-0.5)/0.42,0,1))) : 0) : 1;
+      if(ssc<=0.02) continue;
+      var q0=BC.roof[nc], q1=BC.roof[(nc+1)%NP];
+      ctx.strokeStyle='rgba('+_led+','+(A*fac*ssc).toFixed(3)+')'; ctx.beginPath(); ctx.moveTo(q0[0],q0[1]); ctx.lineTo(q1[0],q1[1]); ctx.stroke(); }
+    // additive GLOW halo on top (neon bloom around the solid core)
+    ctx.globalCompositeOperation='lighter';
     for(var pass=0;pass<2;pass++){ ctx.lineWidth=pass?2.6:5.5; var ba=pass?0.5:0.14;
       for(var n2=0;n2<NP;n2++){ var w0=FRONTW[n2], w1=FRONTW[(n2+1)%NP], fa3=nfa((w0[1]+w1[1])/2); if(fa3<=0.02) continue;
         var sSf=((w0[1]+w1[1])/2 < -25) ? (ckT<0.999 ? (1-smoother(cl((A-0.5)/0.42,0,1))) : 0) : 1;   // south (near) roof: full cyan OVAL only during the 1→2 reveal (camT<1); always OFF once camT=1 (chapter 2 + the 2→3 flip) so it never flashes back as the stadium fades out
         if(sSf<=0.02) continue;
         var p0=BC.roof[n2], p1=BC.roof[(n2+1)%NP];
         ctx.strokeStyle='rgba('+_led+','+(A*ba*fa3*sSf).toFixed(3)+')'; ctx.beginPath(); ctx.moveTo(p0[0],p0[1]); ctx.lineTo(p1[0],p1[1]); ctx.stroke(); } }
-    ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
+    ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1; ctx.lineCap=_rlc;
   }
 
   // ---------- on-grass images (team flags + KICK logo) ----------
-  var _ICO={}; ['home','away'].forEach(function(k){var im=new Image(); im.src='assets/_icon_'+k+'.png'; _ICO[k]=im;});
+  var _ICO={}; ['home','away'].forEach(function(k){var im=new Image(); im.src='assets/_icon_'+k+'.png?v=2'; _ICO[k]=im;});
   var _LOGO=new Image(); _LOGO.src='assets/logo_wordmark.png';
   var FLAG_DIM=0.13, SCORE_DIM=0.15;   // resting alpha (Tier-5 source values); brightens during the celebration
   // ground affine: local metre frame (lx,ly) -> screen, lying flat on the pitch at (wx,wy). e=0.6 m is load-bearing.
@@ -168,20 +177,20 @@ window.CLIPENV = (function(){
     ctx.font='800 10px "PingFang SC",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt,0,0); ctx.restore(); ctx.globalAlpha=1;
   }
 
-  function draw(ctx, proj, projB, detail, key, t, st){
+  function draw(ctx, proj, projB, detail, key, t, st, grassA){
     var A=detail; if(A<=0.01) return;
+    grassA=(grassA==null?1:grassA); var GA=A*grassA;   // grassA fades ONLY the green grass to black (lane-dom page) — the bowl / seats / cyan roof stay lit
     var sweep=null;
-    if(st && st.clip && st.phase==='celeb'){   // goal celebration: crowd-wave sweep in the scoring team's attack direction
+    if(st && st.clip && (st.phase==='celeb'||st.phase==='goal')){   // goal celebration: crowd-wave sweep in the scoring team's attack direction
       var c=st.clip, scorer=hex01(c.teams[c.goal_side].kit), L=lum01(scorer);
       var hot = L>=0.82 ? [scorer[0]*0.58,scorer[1]*0.58,scorer[2]*0.58]
                         : [scorer[0]+(1-scorer[0])*0.28,scorer[1]+(1-scorer[1])*0.28,scorer[2]+(1-scorer[2])*0.28];
-      var cprog=cl(st.pt*1.1,0,1), amp=smoother(cl(st.pt/0.05,0,1))*(1-smoother(cl((st.pt-0.86)/0.14,0,1)));   // 1.1 (was 1.375) → crowd wave travels 25% slower
+      var te=(st.phase==='goal')?(st.pt*0.35):(0.35+st.pt*6.3);   // seconds since the goal flash — sweep begins WITH the fireworks (not after the flash)
+      var cprog=cl(te/6.3*1.35,0,1), amp=smoother(cl(te/0.22,0,1))*(1-smoother(cl((te-4.2)/0.8,0,1)));   // slower crowd wave (~4.3s to cross) — a more majestic sweep; amp holds bright until it has mostly crossed, then fades
       sweep={cprog:cprog, amp:amp, hot:hot, dir:(c.mouth[0]>=0.5?-1:1)};   // attack toward x=105 → sweep right→left
     }
-    drawBowl(ctx, proj, projB, A, key, sweep);   // stadium + celebration crowd sweep
-    drawStripes(ctx, proj, A);            // green pitch
-    drawLines(ctx, proj, A);
-    drawFurniture(ctx, proj, A);          // goal frames + corner pennants
+    drawBowl(ctx, proj, projB, A, key, sweep);   // stadium bowl / seats / cyan roof — full detail (never faded by grassA)
+    if(GA>0.01){ drawStripes(ctx, proj, GA); drawLines(ctx, proj, GA); drawFurniture(ctx, proj, GA); }   // green grass + lines + goals — fade to black for the lane-dom page
   }
   return {draw:draw};
 })();

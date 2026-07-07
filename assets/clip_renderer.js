@@ -76,13 +76,18 @@ window.CLIPRENDER = (function(){
     var kits={home:c.teams.home.kit, away:c.teams.away.kit};
     if(playerA>0.01) for(var i=0;i<pls.length;i++){ ctx.globalAlpha=A*playerA*(pls[i]._sa==null?1:pls[i]._sa); drawDisc(ctx, P, pls[i], kits, carrier); }
     ctx.globalAlpha=A;
-    var ballA=(st.phase==='goal')?(1-st.pt):(st.phase==='celeb'||st.phase==='hold')?0:1;   // ball fades out as the goal is scored — crosses the line and vanishes into the net (no ball left sitting on the line through the celebration)
-    if(ballA>0.01){ ctx.globalAlpha=A*ballA; drawBall(ctx, P, ballMetre(c, st)); }
+    var bmv=ballMetre(c, st), gx=c.mouth[0]<0.5?0:105;
+    var lastB=c.frames[c.nf-1].ball, ballInNet=c.is_goal&&lastB&&(c.mouth[0]<0.5?lastB[0]<=gx+0.3:lastB[0]>=gx-0.3);   // Last Row goals: the ball already crosses the line into the net during build-up
+    var ballA;
+    if(ballInNet&&(st.phase==='shot'||st.phase==='goal')) ballA=0;   // it's already in the net — don't re-fly it back to the line for the vestigial shot/goal beats
+    else ballA=(st.phase==='goal')?(1-st.pt):(st.phase==='celeb'||st.phase==='hold')?0:1;
+    if(bmv&&ballInNet&&st.phase==='build'){ var past=(c.mouth[0]<0.5)?(gx-bmv[0]):(bmv[0]-gx); ballA*=cl(1-(past-0.3)/1.8,0,1); }   // full opacity all the way to the line, then fade as it crosses INTO the net (reads as scored, not stopped short)
+    if(ballA>0.01){ ctx.globalAlpha=A*ballA; drawBall(ctx, P, bmv); }
     ctx.restore();
   }
 
   // ===== broadcast chrome (screen space): pixel clock + team badge + scorer + REPLAY + score =====
-  var _ICONS={}; ['home','away'].forEach(function(k){var im=new Image(); im.src='assets/_icon_'+k+'.png'; _ICONS[k]=im;});
+  var _ICONS={}; ['home','away'].forEach(function(k){var im=new Image(); im.src='assets/_icon_'+k+'.png?v=2'; _ICONS[k]=im;});
   var CFONT={
     "0":["01110","10001","10011","10101","11001","10001","01110"],"1":["00100","01100","00100","00100","00100","00100","01110"],
     "2":["01110","10001","00001","00010","00100","01000","11111"],"3":["11111","00010","00100","00010","00001","10001","01110"],
@@ -157,9 +162,10 @@ window.CLIPRENDER = (function(){
   }
 
   // circular team badge (dark disc · icon clipped · contour ring) — drawn next to the stand clock
-  function standIcon(ctx, icon, x, y, R, a){
+  function standIcon(ctx, icon, x, y, R, a, idy){
+    idy=idy||0;   // vertical nudge of the ARTWORK only (disc + ring stay put) — optically centre a top-heavy crest in the circle
     ctx.globalAlpha=a; ctx.fillStyle='#15171c'; ctx.beginPath(); ctx.arc(x,y,R,0,6.2832); ctx.fill();
-    if(icon&&icon.complete&&icon.naturalWidth){ ctx.save(); ctx.beginPath(); ctx.arc(x,y,R*0.88,0,6.2832); ctx.clip(); ctx.globalAlpha=a; ctx.drawImage(icon,x-R*0.88,y-R*0.88,R*1.76,R*1.76); ctx.restore(); }
+    if(icon&&icon.complete&&icon.naturalWidth){ ctx.save(); ctx.beginPath(); ctx.arc(x,y,R*0.88,0,6.2832); ctx.clip(); ctx.globalAlpha=a; ctx.drawImage(icon,x-R*0.88,y-R*0.88+idy,R*1.76,R*1.76); ctx.restore(); }
     ctx.globalAlpha=a; ctx.lineWidth=Math.max(1,R*0.08); ctx.strokeStyle='#5a616c'; ctx.beginPath(); ctx.arc(x,y,R*1.05,0,6.2832); ctx.stroke();
     ctx.globalAlpha=1;
   }
@@ -171,33 +177,57 @@ window.CLIPRENDER = (function(){
     var mins=(st.clip.clock&&st.clip.clock.minute!=null)?(st.clip.clock.minute+"'"):'';   // minutes only
     var ck=drawClock(ctx, c0[0], c0[1], clockH, mins, detail, t, 'jumbo');
     var R=clockH*0.66, gx=ck.hw+ck.pad+R+clockH*0.62;          // home shield (left) · away attack (right) — slightly farther from the clock
-    standIcon(ctx, _ICONS.home, c0[0]-gx, c0[1]-R*0.1, R, detail);   // home shield sits ~5px low in its art — lift to match the away icon's centre
+    standIcon(ctx, _ICONS.home, c0[0]-gx, c0[1], R, detail, R*0.06);   // home crest is top-heavy (pointed base) → nudge just the artwork down a touch so its mass centres in the disc
     standIcon(ctx, _ICONS.away, c0[0]+gx, c0[1], R, detail);
   }
 
-  // ===== goal-post fireworks (3D, celeb only) — fib-sphere bursts in the scoring team's colour =====
+  // ===== celebration pyro (3D, celeb only): A) CHAMPAGNE spray next to the scored goal (continuous gold
+  // flicks shooting up from the goal posts, ~1.5s) + B) the original spherical bursts, moved to fire ABOVE
+  // the cyan roofline at the stadium's left & right. =====
   var FW_DIR=[], FW_SPD=[];
   (function(){ var n=46, gr=Math.PI*(1+Math.sqrt(5)); for(var i=0;i<n;i++){ var ii=i+0.5, ph=Math.acos(1-2*ii/n), tt=gr*ii;
     FW_DIR.push([Math.sin(ph)*Math.cos(tt), Math.sin(ph)*Math.sin(tt), Math.cos(ph)]); FW_SPD.push(0.75+0.25*i/(n-1)); } })();
-  function fireworks(ctx, st, hp){
-    if(!st || st.phase!=='celeb') return; var detail=cl(hp.detail==null?1:hp.detail,0,1); if(detail<=0.05) return;
-    var c=st.clip, proj=hp.proj, tcel=st.pt*4.2;                 // seconds into the celebration
-    var pgx = c.mouth[0]<0.5 ? 0 : 105;                          // the goal they scored at
+  var CH_N=150, CH_TS=[], CH_ANG=[], CH_SPD=[], CH_YAW=[], CH_LIFE=[];
+  (function(){ for(var i=0;i<CH_N;i++){ var r1=((i*61+7)%100)/100, r2=((i*37+13)%100)/100, r3=((i*17+29)%100)/100, r4=((i*89+5)%100)/100;
+    CH_TS.push(r1*0.3); CH_ANG.push(0.05+0.28*r2); CH_SPD.push(17+12*r3); CH_YAW.push((r4-0.5)*1.1); CH_LIFE.push(0.62+0.45*r3); } })();   // CH_ANG tightened (0.72→0.33 rad max) → the jet is much more VERTICAL, not spraying forward
+  function fireworks(ctx, st, hp){          // (kept the name — index.html calls CLIPRENDER.fireworks)
+    if(!st || (st.phase!=='celeb'&&st.phase!=='goal')) return; var detail=cl(hp.detail==null?1:hp.detail,0,1); if(detail<=0.05) return;
+    var c=st.clip, proj=hp.proj, tch=(st.phase==='goal')?(st.pt*0.35):(0.35+st.pt*5.8);   // seconds since the goal flash — pyro clock runs FASTER (4.2→5.8) so the celebration erupts sooner + snappier
+    if(tch>4.0) return;
+    var pgx=c.mouth[0]<0.5?0:105, xin=(pgx<52.5)?1:-1;   // the scored goal + the direction into the pitch
     var sc=hex(c.teams[c.goal_side].kit).map(function(v){return v/255;});
+    var gold=[cl(sc[0]+0.24,0,1),cl(sc[1]+0.20,0,1),cl(sc[2]*0.35+0.18,0,1)];   // champagne gold from the kit
     var col1=sc.map(function(v){return cl(v+0.30,0,1);}), col2=sc.map(function(v){return cl(v*0.3+0.7,0,1);});
-    function fill(col,a){ ctx.fillStyle='rgba('+(col[0]*255|0)+','+(col[1]*255|0)+','+(col[2]*255|0)+','+a.toFixed(3)+')'; }
-    var offs=[0.2,2.0], posts=[5.5,-5.5];   // only TWO firework rounds (each round = the twin goal-posts), same for open-play + set-piece goals
     ctx.globalCompositeOperation='lighter';
-    for(var o=0;o<offs.length;o++) for(var pp=0;pp<2;pp++){
-      var sy=posts[pp], tau=tcel-offs[o]; if(tau<0||tau>1.63) continue;
-      if(tau<=0.40){ var rz=19*(1-Math.pow(1-tau/0.40,2));      // rise: white comet
-        for(var k=0;k<5;k++){ var tz=rz-0.9*k; if(tz<0)break; var p=proj([pgx,sy,tz]); fill([1,1,1],detail*Math.max(0,1-k/5)*0.9);
-          ctx.beginPath(); ctx.arc(p[0],p[1],2.0,0,6.2832); ctx.fill(); } }
-      else{ var tb=(tau-0.40)/1.23;                              // burst: 46 fib-sphere sparks + gravity droop
+    // A · CHAMPAGNE at the SCORED GOAL — ONE burst UP (the flame climbs base→full over ~0.35s) then holds a STEADY high
+    // flame: particles sit at fixed, evenly-distributed phases → a continuous column, NOT synchronized pulses. Tapers only at the end.
+    var CH_END=2.7;
+    if(tch<=CH_END){ var gbx=pgx-xin*3; var gp=[[gbx,-5.5,1.2],[gbx,5.5,1.2]], G=15;
+      var hgt=ss(cl(tch/0.12,0,1)), chF=cl((CH_END-tch)/0.4,0,1);     // hgt = the burst-up envelope — snaps to full height fast (~0.12) the instant the ball crosses ; chF holds then tapers over the last 0.4
+      for(var pp=0;pp<2;pp++){ var P0=gp[pp], ys=(pp?1:-1);
+        for(var k=0;k<CH_N;k++){ var LIFE=CH_LIFE[k], a=(tch+((k*37)%100)/100*1.1)%LIFE;   // each flick at its OWN fixed phase (spread across the lifetime) → a steady continuous fountain, no pulsing waves
+          var ang=CH_ANG[k], v=CH_SPD[k], spr=Math.sin(ang)*v, vz=Math.cos(ang)*v;
+          var vx=xin*spr*(0.2+0.25*((k*13)%100)/100), vy=ys*spr*(0.3+0.5*Math.abs(CH_YAW[k]));   // modest, mostly-symmetric horizontal spread
+          var a2=a>0.06?a-0.06:0;   // the ENTIRE arc is scaled by hgt (not just vz) → the jet grows straight UP, same vertical shape, never a forward splash then up
+          var wx=P0[0]+vx*a*hgt, wy=P0[1]+vy*a*hgt, wz=P0[2]+(vz*a-0.5*G*a*a)*hgt; if(wz<0.4) continue;
+          var p=proj([wx,wy,wz]), p2=proj([P0[0]+vx*a2*hgt, P0[1]+vy*a2*hgt, P0[2]+(vz*a2-0.5*G*a2*a2)*hgt]);
+          var lf=Math.max(0,1-a/LIFE), hf=cl((wz-P0[2])/11,0,1), col=[lp(gold[0],1,hf),lp(gold[1],1,hf),lp(gold[2],1,hf)];   // FLAME logic: hot WHITE at the top of the arc, gold toward the base
+          ctx.strokeStyle='rgba('+(col[0]*255|0)+','+(col[1]*255|0)+','+(col[2]*255|0)+','+(detail*lf*0.95*chF).toFixed(3)+')';
+          ctx.lineWidth=1.8+2.4*lf; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(p2[0],p2[1]); ctx.lineTo(p[0],p[1]); ctx.stroke();
+        } } }
+    // B · original spherical bursts, HIGHER above the cyan roofline (L & R) — two pulses, then repeated
+    var bpts=[[12,52,44],[93,52,44]], boffs=[0.0,0.15,0.42,0.72,1.1,1.5,1.9];   // rapid opening pulses (react immediately) + a sustained barrage that keeps firing alongside the ~2.5s champagne
+    for(var bo=0;bo<boffs.length;bo++) for(var bi2=0;bi2<2;bi2++){ var B=bpts[bi2], tau=tch-boffs[bo]; if(tau<0||tau>1.63) continue;
+      var B0=B[0]+(((bo*7+bi2*13)%5)-2)*3.4, B1=B[1]+(((bo*11+bi2*5)%5)-2)*2.4, B2=B[2]+(((bo*5+bi2*17)%4)-1.5)*3.2;   // small deterministic jitter so each pulse pops in a slightly different spot
+      if(tau<=0.12){ var rz=13*(1-Math.pow(1-tau/0.12,2));     // rise: white comet climbing from the roofline — very quick so the burst pops almost the instant the ball crosses
+        for(var kk=0;kk<6;kk++){ var tz=rz-0.9*kk; if(tz<0)break; var rpp=proj([B0,B1,B2+tz]);
+          ctx.fillStyle='rgba(255,255,255,'+(detail*Math.max(0,1-kk/6)*0.9).toFixed(3)+')'; ctx.beginPath(); ctx.arc(rpp[0],rpp[1],2.1,0,6.2832); ctx.fill(); } }
+      else{ var tb=(tau-0.12)/1.51;                            // burst: 46 fib-sphere sparks + gravity droop, centred high above the roof
         for(var q=0;q<46;q++){ var d=FW_DIR[q], spd=FW_SPD[q];
-          var bx=pgx+d[0]*spd*tb*10.35, by=sy+d[1]*spd*tb*10.35, bz=19+d[2]*spd*tb*10.35-14*tb*tb; if(bz<0) continue;
-          var p=proj([bx,by,bz]); fill((tb<0.12)?[1,1,1]:(q%2?col2:col1), detail*cl(Math.pow(1-tb,1.4),0,1));
-          ctx.beginPath(); ctx.arc(p[0],p[1],2.3,0,6.2832); ctx.fill(); } }
+          var bx=B0+d[0]*spd*tb*18, by=B1+d[1]*spd*tb*18, bz=(B2+13)+d[2]*spd*tb*18-13*tb*tb; if(bz<34) continue;   // bigger burst; stay above the cyan line
+          var bpp=proj([bx,by,bz]), bcol=(tb<0.12)?[1,1,1]:(q%2?col2:col1);
+          ctx.fillStyle='rgba('+(bcol[0]*255|0)+','+(bcol[1]*255|0)+','+(bcol[2]*255|0)+','+(detail*cl(Math.pow(1-tb,1.4),0,1)).toFixed(3)+')';
+          ctx.beginPath(); ctx.arc(bpp[0],bpp[1],2.9,0,6.2832); ctx.fill(); } }
     }
     ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
   }
