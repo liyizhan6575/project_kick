@@ -689,7 +689,6 @@
   // mobile rotate: the 'resize' event often fires with stale innerWidth/innerHeight (esp. iOS Safari), so the
   // scene keeps the pre-rotation size until a manual refresh. Re-run resize() after the viewport settles.
   window.addEventListener('orientationchange',function(){resize();setTimeout(resize,150);setTimeout(resize,400);});
-  if(window.visualViewport)window.visualViewport.addEventListener('resize',resize);
   resize();requestAnimationFrame(frame);
 })();
 </script>
