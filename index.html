@@ -429,7 +429,7 @@
     var pcReveal=urlPCR!==null?urlPCR:(ch3EnterT!==null?ss(cl((t-ch3EnterT-0.6)/0.5,0,1)):0);   // PC surface waits ~0.6s AFTER the checkers show, then fades in over 0.5s (?pcr overrides for capture)
     var _mf=ss(cl((t-modeT0)/0.5,0,1));   // chapter-3 display-mode crossfade (0.5 s — unified across all three chapters)
     var mode0A=ch3Mode===0?_mf:(ch3ModePrev===0?1-_mf:0), mode1A=ch3Mode===1?_mf:(ch3ModePrev===1?1-_mf:0), mode2A=ch3Mode===2?_mf:(ch3ModePrev===2?1-_mf:0);
-    var clipP=ss(cl((G-1.12)/0.45,0,1))*(1-ss(cl((G-2.0)/0.5,0,1)));   // Opta broadcast clip: chapter 2 only — fades out as the board flips to chapter 3 (decoupled from ch3 so it stays gone in chapter 4)
+    var clipP=directJump?0:(ss(cl((G-1.12)/0.45,0,1))*(1-ss(cl((G-2.0)/0.5,0,1))));   // Opta broadcast clip: chapter 2 only — fades out as the board flips to chapter 3. Suppressed on a direct 1↔3 / 1↔4 jump so it doesn't flash as G sweeps past chapter 2
     var ccF=ss(cl((G-0.78)/0.18,0,1));   // centre-circle handoff: 4 entrance arcs → PROJECTED circle, completed during the entrance so the flip only TILTS it (no mid-flip crossfade)
     var detail=directJump?0:ss(cl(camT,0,1))*(1-ss(cl((G-2)/0.3,0,1)));   // green pitch + stadium fade in only over the LAST stretch of the 3→2 flip (G 2.3→2.0) — pitch rotates/flips first, stadium reveals as it nears the broadcast form; symmetric on 2→3 (fades out before the rotate)
     var bcFade=1-ss(cl(_ch2dk,0,1));   // chapter-2 pages 2+3 (lane dom / shot map): fade the broadcast grass/clip to BLACK — over the FULL page-change ease (was compressed /0.42), so the grass fades at the SAME speed as the overlay cross-fades. Applied only to the broadcast draw alphas below, not to `detail`.
@@ -629,7 +629,7 @@
     vizp.style.opacity=textP.toFixed(2); vizp.style.transform='translateX('+lp(40,0,textP).toFixed(0)+'px)';
     ch1note.style.opacity=textP.toFixed(2); ch1note.style.transform='translateY('+lp(8,0,textP).toFixed(0)+'px)';
     if(_ch1lx){ ch1note.style.left=(_ch1lx/dpr)+'px'; ch1note.style.top='auto'; ch1note.style.bottom=(H/dpr-_ch1ty/dpr+14)+'px'; }   // "|" on the pitch left edge; annotation bottom sits 14px above the pitch top
-    var ch2P=ss(cl((G-1.85)/0.13,0,1))*(1-ss(cl((G-2.05)/0.13,0,1)));   // chapter-2 copy + backdrop: FIXED bottom-right on EVERY page (no hop, no teleport); only fades in/out with the CHAPTER. The lane-dom numbers/arrows are pulled in to clear it.
+    var ch2P=directJump?0:(ss(cl((G-1.85)/0.13,0,1))*(1-ss(cl((G-2.05)/0.13,0,1))));   // chapter-2 copy + backdrop: FIXED bottom-right; fades in/out with the CHAPTER. Suppressed on a direct 1↔3/1↔4 jump so it doesn't flash as G sweeps past chapter 2.
     ch2txt.classList.remove('ldml'); ch2dark.classList.remove('ldml');
     ch2txt.style.opacity=ch2dark.style.opacity=ch2P.toFixed(2);
     var ch3P=ss(cl((G-2.7)/0.28,0,1))*(1-ss(cl((G-3.32)/0.28,0,1)));   // chapter-3 copy (left): in as the Research board settles (~G3), out toward chapter 4
@@ -644,7 +644,7 @@
       else { ch3dots.style.left=Math.max(10,_ch3lx/dpr-16)+'px'; ch3dots.style.transform='translate(-100%,-50%)'; ch3dots.style.top=(_ch3cy/dpr)+'px'; ch3dots.style.bottom='auto'; }   // landscape: vertical column just LEFT of the board's left sideline, centred on the pitch
     }
     // ── chapter-2 pages (goal replay → lane dominance → shot map → heatmap): auto-advancing, black-fade + per-page grow clocks ──
-    var _c2=ss(cl((G-1.72)/0.18,0,1))*(1-ss(cl((G-2.08)/0.18,0,1)));   // broadcast-settled visibility
+    var _c2=directJump?0:(ss(cl((G-1.72)/0.18,0,1))*(1-ss(cl((G-2.08)/0.18,0,1))));   // broadcast-settled visibility (0 on a direct 1↔3/1↔4 jump so the ch2 dots don't flash mid-jump)
     if(_c2<0.4&&ch2Mode!==0){ ch2Mode=0; _ch2ldT0=-99; _ch2smT0=-99; ch2modeT0=t; ch2dots.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',+x.dataset.m===0);}); }   // leaving chapter 2 → reset to the goal replay
     var _c2dt=Math.max(0,Math.min(0.05,t-_ch2prevT)); _ch2prevT=t;
     var _c2k=_c2dt?1-Math.pow(0.5,_c2dt/0.16):0;                       // exponential ease (~0.5 s crossfade — matches chapters 1 & 3)
