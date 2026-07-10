@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://liyizhan6575.github.io/project_kick/sitemap.xml

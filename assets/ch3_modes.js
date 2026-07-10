@@ -105,7 +105,7 @@ window.CH3 = (function(){
       ctx.globalAlpha=alpha; ctx.textAlign='right';
       ctx.font='800 '+(Math.max(uf*1.4, H*0.015*fscale))+'px ui-monospace,monospace'; ctx.fillStyle='#fbbf24'; ctx.fillText(val, xR, ny);   // value = max(board-relative, viewport-relative): board-rel wins full-screen, viewport-rel wins half-screen → readable in both, identical to xT
       var vw=ctx.measureText(val).width;
-      ctx.font='600 '+(Math.max(uf, 11*dpr*fscale))+'px ui-monospace,monospace'; ctx.fillStyle='#9aa0a8'; ctx.fillText('EXPECTED GOAL', xR-vw-gap, ny); }   // label: same max() so both readouts track full & half screen identically
+      ctx.font='600 '+(Math.max(uf, 11*dpr*fscale))+'px ui-monospace,monospace'; ctx.fillStyle='#9aa0a8'; ctx.fillText('EXPECTED GOALS', xR-vw-gap, ny); }   // "Expected Goals" (xG) is plural; label sized via the same max() as the xT readout
     ctx.restore();
   }
 
