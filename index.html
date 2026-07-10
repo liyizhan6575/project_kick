@@ -350,7 +350,7 @@
   function vN(a){var L=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/L,a[1]/L,a[2]/L];}
   function vX(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
   function vD(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
-  var camT=0, camG=1, directJump=false, logoJump=false;   // camT: 0 birdview→1 broadcast ; camG drives B(birdview)→C(broadcast)→V(vertical) ; directJump: 1↔3 jump rotates B↔V top-down, skipping the broadcast ; logoJump: 2↔4 jump — the corner logo EXPANDS + tilts straight into the broadcast (no board-reform-then-flip)
+  var camT=0, camG=1, directJump=false, logoJump=false, homeJump=false;   // camT: 0 birdview→1 broadcast ; camG drives B(birdview)→C(broadcast)→V(vertical) ; directJump: 1↔3 jump rotates B↔V top-down, skipping the broadcast ; logoJump: 2↔4 jump — the corner logo EXPANDS + tilts straight into the broadcast ; homeJump: 0↔4 jump — the KK logo just SHIFTS + SCALES between centre and corner (no pitch, no rotation — the ring is a circle)
   function proj(Q){
     var eye,tgt,foc,up,z,voff;
     if(directJump){ var jp=ss(cl((camG-1)/2,0,1));                              // DIRECT 1↔3: top-down rotation birdview↔vertical (B & V share eye/tgt/foc; only up rotates 90°) — no broadcast tilt
@@ -385,6 +385,25 @@
   }
 
   // chapter-1 page 1 — CV keypoint detection: a cyan dot at each pitch-homography landmark, with a wave/ping rippling outward
+  // KK loader badge (4 colour arcs + grey ticks + halftone mark) at (lx,ly). c4 = formation 0→1 (0.5-ring→closed logo). mt = halftone morph clock (0 holds the KK mark). Shared by the ch4 corner logo AND the 0↔4 shift-scale.
+  function drawLogoBadge(lx,ly,RARCv,CCRv,RINGv,LWv,c4,t,mt){
+    if(c4<=0.003) return;
+    var mp4=1-c4, aR4=lp(RARCv,CCRv,mp4), span4=lp(87.5,90,mp4)*DEG, STEP4=span4/24, rot4=rotAt(t)*(1-mp4);
+    ctx.lineWidth=Math.max(1.2*dpr,RINGv*0.027);
+    for(var j4=0;j4<4;j4++){ var a04=(90-j4*90)*DEG-rot4; ctx.strokeStyle=mix(ARGB[j4],GREY,mp4); ctx.globalAlpha=c4; ctx.beginPath();
+      for(var k4=0;k4<=24;k4++){ var an4=a04-k4*STEP4, qx4=lx+aR4*Math.cos(an4), qy4=ly-aR4*Math.sin(an4); k4?ctx.lineTo(qx4,qy4):ctx.moveTo(qx4,qy4); } ctx.stroke(); }
+    ctx.globalAlpha=1;
+    var tA4=ss(cl((c4-0.45)/0.4,0,1)), rin4=RINGv*0.893;
+    if(tA4>0.01){ ctx.lineWidth=Math.max(0.7*dpr,RINGv*0.0108); ctx.strokeStyle='#6a6f78';
+      for(var tt4=0;tt4<N;tt4++){ var ta4=(90-tt4*(360/N))*DEG, tc4=Math.cos(ta4), ts4=Math.sin(ta4); ctx.globalAlpha=tA4; ctx.beginPath(); ctx.moveTo(lx+rin4*tc4,ly-rin4*ts4); ctx.lineTo(lx+RINGv*tc4,ly-RINGv*ts4); ctx.stroke(); } ctx.globalAlpha=1; }
+    var lA4=ss(cl((c4-0.5)/0.5,0,1));
+    if(lA4>0.003&&SHS){
+      var cyc4=MH+MD, ph4=mt/cyc4, si4=Math.floor(ph4), loc4=(ph4-si4)*cyc4;
+      var ci4=si4%SHS.length, A4=SHS[ci4], B4=SHS[(ci4+1)%SHS.length], me4=loc4<=MH?0:ss((loc4-MH)/MD);
+      ctx.fillStyle='rgba(255,255,255,'+(lA4*0.92).toFixed(3)+')';
+      for(var m4=0;m4<SHN;m4++){ var a4=A4[m4], b4=B4[m4], qx4=lx+(a4[0]+(b4[0]-a4[0])*me4)*LWv, qy4=ly+(a4[1]+(b4[1]-a4[1])*me4)*LWv, rr4=(a4[2]+(b4[2]-a4[2])*me4)*LWv;
+        ctx.beginPath(); ctx.arc(qx4,qy4,rr4,0,6.283); ctx.fill(); } }
+  }
   function drawKeypoints(ctx, P, alpha, t, dpr){
     if(alpha<=0.01) return;
     ctx.save();
@@ -453,6 +472,12 @@
     _ch1lx=Math.min(P([0,-34])[0], P([0,34])[0])+(shift||0);   // CV pitch LEFT edge (on-screen, incl. the pitch's left-shift) → the annotation "|" aligns to it
     // chapter-4 logo geometry (screen space) — shared by the board collapse AND the logo formation
     var S4=Math.min(W,H)*(portrait?0.066:0.055), RARC4=S4*1.039, CCR4=S4*0.2, RING4=S4, LW4=S4*1.133, l4x=W-RARC4-W*0.045, l4y=H-RARC4-H*0.055;   // portrait: bigger badge so its height ≈ the partnerships block (bottom-right logo aligns with the partnership strip)
+    if(homeJump&&animing){   // 0↔4 HOME JUMP (only WHILE animating; settled ch0/ch4 use their normal renderers): entrance logo (centre, big) ↔ work-with-us logo (corner, small) is just a SHIFT + SCALE — no pitch, no rotation (the ring is a circle, so rotating it is invisible). Draw only the logo, interpolated, and skip the whole pitch/board pipeline.
+      var uH=cl(G/4,0,1), sH=lp(RARC/RARC4,1,uH);   // uH: 0 at entrance … 1 at work-with-us ; sH scales the native corner badge up to the centre-logo size at uH=0
+      ctx.save(); ctx.translate(lp(cx,l4x,uH),lp(cy,l4y,uH)); ctx.scale(sH,sH); ctx.translate(-l4x,-l4y);   // place the badge's anchor along centre→corner, scaled big→small
+      drawLogoBadge(l4x,l4y,RARC4,CCR4,RING4,LW4,1,t,0);   // fully-formed logo (c4=1), halftone held on the KK mark (mt=0)
+      ctx.restore(); ctx.restore(); return;   // second restore matches the ctx.save() at the top of draw()
+    }
     if(logoJump?G>2.0:G>3){   // board moves + shrinks into its OWN centre circle at the logo seed. Normally only over ch4 (G>3); on a 2↔4 logo jump it spans the WHOLE jump (G 2→4) so the pitch expands out of the corner across the entire tilt
       var bl4=logoJump?ss(cl((G-2)/2,0,1)):ss(cl((G-3)/0.5,0,1)), pbc=proj([52.5,0,0]), pbe=proj([61.65,0,0]), ccrB=Math.hypot(pbe[0]-pbc[0],pbe[1]-pbc[1])||1, sB=lp(1,CCR4/ccrB,bl4);
       ctx.translate(lp(pbc[0],l4x-(shift||0),bl4), lp(pbc[1],l4y,bl4)); ctx.scale(sB,sB); ctx.translate(-pbc[0],-pbc[1]);
@@ -555,23 +580,9 @@
     // === CHAPTER 4 · "Work with us" — the centre circle grows back out into the KICK logo (4 arcs + ticks + halftone), bottom-right. Echoes the intro logo build, REVERSED. Centre reserved for copy (TBD). ===
     var c4=ss(cl((G-3.35)/0.55,0,1));   // formation 0→1 over G 3.35→3.9 — begins as the collapsing board's centre circle lands on the logo seed (clean hand-off)
     if(c4>0.003){
-      var lx=l4x, ly=l4y;   // logo anchor (hoisted geometry, shared with the board collapse above)
-      var mp4=1-c4, aR4=lp(RARC4,CCR4,mp4), span4=lp(87.5,90,mp4)*DEG, STEP4=span4/24, rot4=rotAt(t)*(1-mp4);   // mp4=1 → grey centre circle ; mp4=0 → open colour loader ring
-      ctx.lineWidth=Math.max(1.2*dpr,RING4*0.027);
-      for(var j4=0;j4<4;j4++){ var a04=(90-j4*90)*DEG-rot4; ctx.strokeStyle=mix(ARGB[j4],GREY,mp4); ctx.globalAlpha=c4; ctx.beginPath();
-        for(var k4=0;k4<=24;k4++){ var an4=a04-k4*STEP4, qx4=lx+aR4*Math.cos(an4), qy4=ly-aR4*Math.sin(an4); k4?ctx.lineTo(qx4,qy4):ctx.moveTo(qx4,qy4); } ctx.stroke(); }
-      ctx.globalAlpha=1;
-      var tA4=ss(cl((c4-0.45)/0.4,0,1)), rin4=RING4*0.893;   // ticks sweep in once the ring has opened
-      if(tA4>0.01){ ctx.lineWidth=Math.max(0.7*dpr,RING4*0.0108); ctx.strokeStyle='#6a6f78';
-        for(var tt4=0;tt4<N;tt4++){ var ta4=(90-tt4*(360/N))*DEG, tc4=Math.cos(ta4), ts4=Math.sin(ta4); ctx.globalAlpha=tA4; ctx.beginPath(); ctx.moveTo(lx+rin4*tc4,ly-rin4*ts4); ctx.lineTo(lx+RING4*tc4,ly-RING4*ts4); ctx.stroke(); } ctx.globalAlpha=1; }
-      var lA4=ss(cl((c4-0.5)/0.5,0,1));   // halftone fills in last, then cycles logo → player(kicking) → ball, like the intro
-      if(lA4>0.003&&SHS){
-        if(c4>=0.99){ if(_c4t0===null)_c4t0=t; } else { _c4t0=null; }   // morph cycle starts only once the corner logo has fully assembled (so it forms AS the logo first)
-        var mt4=(urlMT!==null)?urlMT:(_c4t0!==null?(t-_c4t0):0), cyc4=MH+MD, ph4=mt4/cyc4, si4=Math.floor(ph4), loc4=(ph4-si4)*cyc4;
-        var ci4=si4%SHS.length, A4=SHS[ci4], B4=SHS[(ci4+1)%SHS.length], me4=loc4<=MH?0:ss((loc4-MH)/MD);
-        ctx.fillStyle='rgba(255,255,255,'+(lA4*0.92).toFixed(3)+')';
-        for(var m4=0;m4<SHN;m4++){ var a4=A4[m4], b4=B4[m4], qx4=lx+(a4[0]+(b4[0]-a4[0])*me4)*LW4, qy4=ly+(a4[1]+(b4[1]-a4[1])*me4)*LW4, rr4=(a4[2]+(b4[2]-a4[2])*me4)*LW4;
-          ctx.beginPath(); ctx.arc(qx4,qy4,rr4,0,6.283); ctx.fill(); } }
+      if(c4>=0.99){ if(_c4t0===null)_c4t0=t; } else { _c4t0=null; }   // morph cycle starts only once the corner logo has fully assembled (so it forms AS the logo first)
+      var mt4=(urlMT!==null)?urlMT:(_c4t0!==null?(t-_c4t0):0);
+      drawLogoBadge(l4x,l4y,RARC4,CCR4,RING4,LW4,c4,t,mt4);
     }
   }
 
@@ -621,10 +632,11 @@
   function isMid(ch){ if(!animing) return false; var lo=Math.min(gFrom,gTo), hi=Math.max(gFrom,gTo); return ch>lo+0.5 && ch<hi-0.5; }
   (function(){var v=new URLSearchParams(location.search).get('gj'); if(v!==null){var a=v.split(',').map(Number); gFrom=a[0]; gTo=a[1]; cur=a[1]; animing=true; setJump(a[0],a[1]);}})();   // capture hook: ?gj=from,to freezes a mid-jump (isMid/directJump/logoJump live) — pair with ?p to pick the G along the sweep
   function jDur(a,b){ if(RM)return 1; var d=Math.abs(b-a), lo=Math.min(a,b), hi=Math.max(a,b);
+    if(lo===0&&hi===4) return 1150;   // 0↔4 home logo shift+scale — a quick, direct glide
     if(lo<2&&hi>2) return 1000+(d-2)*300;   // crosses the broadcast page (top-down-rotation family) — 1↔3 stays 1000, longer sweeps breathe
     if(d===1) return (lo===1&&hi===2)?680:(lo===0&&hi===1)?1400:850;   // single flips keep their tuned feel
     return 900+(d-1)*340; }   // multi-chapter jumps (2↔4, 0↔2, …) get room; they also ride smootherstep easing (see frame())
-  function setJump(a,b){ directJump=(Math.min(a,b)<2&&Math.max(a,b)>2); logoJump=(Math.min(a,b)===2&&Math.max(a,b)===4); aDur=jDur(a,b); }
+  function setJump(a,b){ var lo=Math.min(a,b), hi=Math.max(a,b); homeJump=(lo===0&&hi===4); directJump=(lo<2&&hi>2)&&!homeJump; logoJump=(lo===2&&hi===4); aDur=jDur(a,b); }
   function step(dir){
     if(animing||now()-lastEnd<150) return;                   // ignore mid-transition / absorb fling + momentum tail
     if(cur===0&&dir>0&&tNow<1.3) return;                     // let the entrance logo fully ignite before the first morph
@@ -664,7 +676,7 @@
     var pshift=directJump? lp(-W*0.215,W*0.215,ss(cl((G-1)/2,0,1)))   // direct 1↔3: slide straight left↔right (no centre dwell)
                      : (G<=2)? lp(0,-W*0.215,slideP)*(1-ss(cl(G-1,0,1)))   // ch1 CV (left) → ch2 broadcast (centre)
                      : W*0.215*ss(cl(G-2,0,1));                            // ch2 broadcast (centre) → ch3 vertical board (RIGHT); ch4 keeps it RIGHT (board fades there, logo resolves bottom-right)
-    if(portrait)pshift=0;                                                 // portrait: scene stays centred (no left/right column slide) — the text panel stacks below it via CSS
+    if(portrait||homeJump)pshift=0;                                       // portrait: scene stays centred. homeJump: the logo glides in screen space, no column slide
     draw(t, G, pshift, cvClip, clipT);
     htext.style.opacity=(ss(cl((t-0.7)/1.0,0,1))*(1-ss(cl(G/0.18,0,1)))).toFixed(2);   // entrance: slogan fades IN with the logo ignition (t 0.7→1.7s), then scroll fades it out
     var fade2=ss(cl((G-1)/0.2,0,1));   // CV-scene text clears FAST at the start of the flip (so it doesn't linger over the tilt)
@@ -672,13 +684,13 @@
     vizp.style.opacity=textP.toFixed(2); vizp.style.transform='translateX('+lp(40,0,textP).toFixed(0)+'px)';
     ch1note.style.opacity=textP.toFixed(2); ch1note.style.transform='translateY('+lp(8,0,textP).toFixed(0)+'px)';
     if(_ch1lx){ ch1note.style.left=(_ch1lx/dpr)+'px'; ch1note.style.top='auto'; ch1note.style.bottom=(H/dpr-_ch1ty/dpr+14)+'px'; }   // "|" on the pitch left edge; annotation bottom sits 14px above the pitch top
-    var ch2P=directJump?0:(ss(cl((G-1.85)/0.13,0,1))*(1-ss(cl((G-2.05)/0.13,0,1))));   // chapter-2 copy + backdrop: FIXED bottom-right; fades in/out with the CHAPTER. Suppressed on a direct 1↔3/1↔4 jump so it doesn't flash as G sweeps past chapter 2.
+    var ch2P=(directJump||homeJump)?0:(ss(cl((G-1.85)/0.13,0,1))*(1-ss(cl((G-2.05)/0.13,0,1))));   // chapter-2 copy + backdrop: FIXED bottom-right; fades in/out with the CHAPTER. Suppressed on a direct 1↔3/1↔4 or 0↔4 home jump so it doesn't flash as G sweeps past chapter 2.
     ch2txt.classList.remove('ldml');
     ch2txt.style.opacity=ch2P.toFixed(2);
     var ch3P=(isMid(3)?0:1)*ss(cl((G-2.7)/0.28,0,1))*(1-ss(cl((G-3.32)/0.28,0,1)));   // chapter-3 copy (left): in as the Research board settles (~G3), out toward chapter 4 — hidden when ch3 is a jump intermediate
     ch3txt.style.opacity=ch3P.toFixed(2); ch3txt.style.transform='translateX('+lp(-40,0,ch3P).toFixed(0)+'px)'; ch3link.style.pointerEvents=ch3P>0.5?'auto':'none';
     var ch3dot=ss(cl((G-2.5)/0.35,0,1))*(1-ss(cl((G-3.4)/0.4,0,1)));   // chapter-3 dot field — fades in with the Research board, out toward "Work with us"
-    htex.style.opacity=Math.max(ss(cl((G-0.55)/0.38,0,1))*(1-fade2), ch3dot).toFixed(2);
+    htex.style.opacity=(homeJump?0:Math.max(ss(cl((G-0.55)/0.38,0,1))*(1-fade2), ch3dot)).toFixed(2);   // text-glow suppressed on the 0↔4 logo glide (no pitch/text underneath)
     var _hx=portrait?50:(G<2?88:12), _hy=portrait?89:50, _hw=portrait?98:78, _hh=portrait?50:86;   // landscape: dots beside the pitch (RIGHT on ch1 / LEFT on ch3). Portrait: pitch is up top, so the glow drops LOW (behind the bottom text) — never on the pitch
     if(_hx!==htexX||_hy!==htexY){ htexX=_hx; htexY=_hy; htex.style.maskImage=htex.style.webkitMaskImage='radial-gradient('+_hw+'% '+_hh+'% at '+_hx+'% '+_hy+'%,#000 0%,rgba(0,0,0,.4) 42%,transparent 72%)'; }
     _nowT=t; var _c3=ss(cl((G-2.0)/0.5,0,1))*(1-ss(cl((G-3.05)/0.3,0,1))); ch3dots.style.opacity=(_c3>0.6&&!isMid(3)?'1':'0'); ch3dots.style.pointerEvents=(_c3>0.6&&!isMid(3))?'auto':'none';   // chapter-3 mode toggle: only on the Research board — fades out into chapter 4 (logo) like the board itself
@@ -687,7 +699,7 @@
       else { ch3dots.style.left=Math.max(10,_ch3lx/dpr-16)+'px'; ch3dots.style.transform='translate(-100%,-50%)'; ch3dots.style.top=(_ch3cy/dpr)+'px'; ch3dots.style.bottom='auto'; }   // landscape: vertical column just LEFT of the board's left sideline, centred on the pitch
     }
     // ── chapter-2 pages (goal replay → lane dominance → shot map → heatmap): auto-advancing, black-fade + per-page grow clocks ──
-    var _c2=directJump?0:(ss(cl((G-1.72)/0.18,0,1))*(1-ss(cl((G-2.08)/0.18,0,1))));   // broadcast-settled visibility (0 on a direct 1↔3/1↔4 jump so the ch2 dots don't flash mid-jump)
+    var _c2=(directJump||homeJump)?0:(ss(cl((G-1.72)/0.18,0,1))*(1-ss(cl((G-2.08)/0.18,0,1))));   // broadcast-settled visibility (0 on a direct 1↔3/1↔4 or 0↔4 home jump so the ch2 dots don't flash mid-jump)
     if(_c2<0.4&&ch2Mode!==0){ ch2Mode=0; _ch2ldT0=-99; _ch2smT0=-99; ch2modeT0=t; ch2dots.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',+x.dataset.m===0);}); }   // leaving chapter 2 → reset to the goal replay
     var _c2dt=Math.max(0,Math.min(0.05,t-_ch2prevT)); _ch2prevT=t;
     var _c2k=_c2dt?1-Math.pow(0.5,_c2dt/0.16):0;                       // exponential ease (~0.5 s crossfade — matches chapters 1 & 3)
