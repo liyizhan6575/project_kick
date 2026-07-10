@@ -57,7 +57,7 @@
   .ch4qr{display:flex;flex-direction:column;align-items:center;gap:11px;margin-top:4.5vh}
   .ch4qr .lbl{font:600 11px/1 ui-monospace,monospace;letter-spacing:.3em;text-transform:uppercase;color:#6b7280}
   .ch4qr img{width:108px;height:108px;border-radius:8px;display:block}
-  .ch4collab{position:absolute;left:6vw;bottom:6vh;display:flex;flex-direction:column;align-items:flex-start;gap:13px}
+  .ch4collab{align-self:flex-start;margin-top:auto;display:flex;flex-direction:column;align-items:flex-start;gap:13px}   /* partnerships in the flex flow (margin-top:auto pins it to the bottom-left) — NOT absolute, so tall cards on wide screens can never overlap it */
   .ch4collab .cl{font:600 11px/1 ui-monospace,monospace;letter-spacing:.3em;text-transform:uppercase;color:#fbbf24}
   .ch4logos{display:flex;align-items:flex-end;gap:30px}
   .ch4logos span{width:104px;display:flex;flex-direction:column;align-items:center;gap:9px;opacity:.85}
@@ -69,14 +69,30 @@
   /* zh: CJK glyphs read heavier than Latin caps, so the ch4 headline needs a smaller size than the shared clamp (line-height 1.2 inherited from the mobile rule above) */
   @media(max-width:480px){html[data-lang="zh"] #ch4 .ch4head h2{font-size:clamp(17px,5.2vw,22px)}}
   @media(max-width:480px) and (max-height:740px){html[data-lang="zh"] #ch4 .ch4head h2{font-size:clamp(15px,4.6vw,19px)}}
-  #ch2dark{position:fixed;right:2.5vw;bottom:3vh;width:clamp(340px,32vw,560px);height:clamp(270px,34vh,360px);z-index:3;opacity:0;pointer-events:none;background:#0a0a0a;border-radius:30px;filter:blur(28px)}   /* soft-edged rounded black card behind the caption — tall enough to cover the "02 · VISUALIZATION" eyebrow through the paragraph, px-bounded so it doesn't balloon */
+  /* phone held HORIZONTALLY (short landscape): the tall 2x2-cards + absolute partnerships stack overflows / collides, so pack the four cards into ONE wide row, flow the partnerships inline, and centre it all */
+  @media(orientation:landscape) and (max-height:520px){
+    #ch4{padding:54px 4vw 8px;justify-content:center}
+    #ch4 .ch4head{margin-bottom:1.6vh;min-height:0}
+    #ch4 .ch4head h2{font-size:clamp(18px,3.6vh,26px);line-height:1.04}
+    html[data-lang="zh"] #ch4 .ch4head h2{font-size:clamp(16px,3.2vh,22px)}
+    .ch4cards{grid-template-columns:repeat(4,1fr);gap:8px;max-width:1100px}
+    .ch4card{padding:8px 11px}
+    .ch4card h3{font-size:13px;margin:0 0 3px}
+    .ch4card p{font-size:10px;line-height:1.28}
+    .ch4contact{flex-direction:row;align-items:center;gap:10px;margin-top:8px;padding:7px 14px;max-width:1100px}
+    .ch4contact .ctl{font-size:8.5px;letter-spacing:.12em}
+    .ch4contact .ctm{font-size:12px}
+    .ch4collab{position:static;align-self:center;margin-top:8px;align-items:center;gap:6px}
+    .ch4collab .cl{font-size:8px}
+    .ch4logos{gap:12px}.ch4logos span{width:56px;gap:2px}.ch4logos img{height:14px}.ch4logos em{font-size:7.5px}
+  }
   #ch2txt.ldml{left:5vw;right:auto}   /* lane-dom page: caption shifts LEFT so it clears the %-numbers, which sit on the right defensive end */
-  #ch2dark.ldml{left:2.5vw;right:auto}
   #ch2txt{position:fixed;right:5vw;bottom:6vh;z-index:4;opacity:0;pointer-events:none;max-width:46ch;text-align:left}
+  #ch2txt::before{content:'';position:absolute;inset:-22px -30px;z-index:-1;background:#0a0a0a;border-radius:30px;filter:blur(26px)}   /* soft-edged black card AUTO-SIZED to the caption box (inset margin + blur) — always the right shape whatever the language/width/line-count, so the text never spills onto the bright pitch */
   #ch2txt .eb{font:600 12px/1 ui-monospace,monospace;letter-spacing:.3em;text-transform:uppercase;color:#fbbf24;margin-bottom:16px}
   #ch2txt h2{font:800 clamp(22px,2.6vw,36px)/1.18 sans-serif;color:#f2f2f2;margin:0 0 16px}
   #ch2txt p{color:#9aa0a8;font-size:clamp(17px,1.4vw,20px);line-height:1.55;margin:0}
-  @media(max-width:760px),(orientation:portrait){#ch2txt,#ch2txt.ldml{left:6vw;right:6vw;max-width:none;bottom:4vh}#ch2dark,#ch2dark.ldml{width:auto;left:4vw;right:4vw;height:clamp(220px,30vh,320px);border-radius:26px}}   /* portrait: caption sits full-width below the pitch, so cancel the lane-dom left-shift */
+  @media(max-width:760px),(orientation:portrait){#ch2txt,#ch2txt.ldml{left:6vw;right:6vw;max-width:none;bottom:4vh}#ch2txt::before{inset:-16px -5vw}}   /* portrait: caption sits full-width below the pitch */
   /* portrait: panel/heading/body fonts scale with viewport HEIGHT (the portrait-dominant dimension), not width — so they grow on a tall half-screen and shrink on small phones */
   @media(orientation:portrait){
     .panel h2,#ch2txt h2{font-size:clamp(20px,3.0vh,34px)}
@@ -248,7 +264,6 @@
       </div>
     </div>
   </div>
-  <div id="ch2dark"></div>
   <div id="ch2txt"><div class="eb" data-i18n="ch2_eyebrow">02 · Visualization</div><h2 data-i18n="ch2_head">We turn any feed into broadcast.</h2><p data-i18n="ch2_body">Event data or full tracking — Sony Hawk-Eye, Stats Perform, StatsBomb, or whatever standard you already run — we take any of it and turn it into clean, broadcast-ready graphics.</p></div>
   <div class="panel" id="ch3txt"><div class="eb" data-i18n="ch3_eyebrow">03 · Research</div><h2 data-i18n="ch3_head">More than an engineering project.</h2><p><span data-i18n="ch3_body_1">We stand on the best of football science and build on it with our own value models. We open-source the field's leading metrics on </span><a id="ch3link" href="https://github.com/liyizhan6575/project_kick" target="_blank" rel="noopener">GitHub</a><span data-i18n="ch3_body_2">, and welcome every researcher and practitioner to join.</span></p></div>
   <div id="ch1note" data-i18n-html="ch1_note">Every visible landmark, <b>pinned to the pixel</b> — 99.7% recall, sub-pixel precision. Measured, not estimated.</div>
@@ -561,7 +576,7 @@
   }
 
   var htext=document.getElementById('htext'), vizp=document.getElementById('vizp'), htex=document.getElementById('htex'), htexX=88, htexY=50, ch4=document.getElementById('ch4'), ch4mailLink=ch4.querySelector('.ch4contact'), ch1note=document.getElementById('ch1note');
-  var ch2txt=document.getElementById('ch2txt'), ch2dark=document.getElementById('ch2dark'), ch3txt=document.getElementById('ch3txt'), ch3link=document.getElementById('ch3link');
+  var ch2txt=document.getElementById('ch2txt'), ch3txt=document.getElementById('ch3txt'), ch3link=document.getElementById('ch3link');
   var ch3dots=document.getElementById('ch3dots'), ch3Mode=0, ch3ModePrev=0, modeT0=-99, _nowT=0, _ch3by=0, _ch3lx=0, _ch3cy=0;   // chapter-3 display mode (0=pitch control · 1=xG · 2=xT) + crossfade clock ; _ch3by = board bottom screen-y ; _ch3lx/_ch3cy = left sideline x + board centre y (sideline dot column)
   var ch1dots=document.getElementById('ch1dots'), ch1Mode=1, ch1ModePrev=0, ch1modeT0=-99, ch1modeAt=0, _ch1vis=false, _ch1by=0, _ch1ty=0, _ch1lx=0, _trackT0=0, _ch1hard=false, CH1_DUR=[6,8,9], CH1_NEXT=[2,0,1];   // chapter-1 CONTENT mode (0=keypoints · 1=trace estimation · 2=full tracking); page ORDER is trace(1)→keypoints(0)→tracking(2) via CH1_NEXT; CH1_DUR = per-mode auto dwell; _trackT0 = clip-loop start; _ch1by = CV pitch bottom screen-y
   var ch2dots=document.getElementById('ch2dots'), ch2Mode=0, _ch2prevT=0, _ch2by=0;   // chapter-2 page (0=goal replay · 1=lane dominance · 2=shot map)
@@ -658,8 +673,8 @@
     ch1note.style.opacity=textP.toFixed(2); ch1note.style.transform='translateY('+lp(8,0,textP).toFixed(0)+'px)';
     if(_ch1lx){ ch1note.style.left=(_ch1lx/dpr)+'px'; ch1note.style.top='auto'; ch1note.style.bottom=(H/dpr-_ch1ty/dpr+14)+'px'; }   // "|" on the pitch left edge; annotation bottom sits 14px above the pitch top
     var ch2P=directJump?0:(ss(cl((G-1.85)/0.13,0,1))*(1-ss(cl((G-2.05)/0.13,0,1))));   // chapter-2 copy + backdrop: FIXED bottom-right; fades in/out with the CHAPTER. Suppressed on a direct 1↔3/1↔4 jump so it doesn't flash as G sweeps past chapter 2.
-    ch2txt.classList.remove('ldml'); ch2dark.classList.remove('ldml');
-    ch2txt.style.opacity=ch2dark.style.opacity=ch2P.toFixed(2);
+    ch2txt.classList.remove('ldml');
+    ch2txt.style.opacity=ch2P.toFixed(2);
     var ch3P=(isMid(3)?0:1)*ss(cl((G-2.7)/0.28,0,1))*(1-ss(cl((G-3.32)/0.28,0,1)));   // chapter-3 copy (left): in as the Research board settles (~G3), out toward chapter 4 — hidden when ch3 is a jump intermediate
     ch3txt.style.opacity=ch3P.toFixed(2); ch3txt.style.transform='translateX('+lp(-40,0,ch3P).toFixed(0)+'px)'; ch3link.style.pointerEvents=ch3P>0.5?'auto':'none';
     var ch3dot=ss(cl((G-2.5)/0.35,0,1))*(1-ss(cl((G-3.4)/0.4,0,1)));   // chapter-3 dot field — fades in with the Research board, out toward "Work with us"
