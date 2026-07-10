@@ -441,7 +441,7 @@
       ctx.translate(lp(pbc[0],l4x-(shift||0),bl4), lp(pbc[1],l4y,bl4)); ctx.scale(sB,sB); ctx.translate(-pbc[0],-pbc[1]);
     }
     var ch3=ss(cl((G-2.0)/0.5,0,1))*(1-ss(cl((G-3.05)/0.3,0,1)));   // chapter 3 = vertical board; fades out as it collapses into the chapter-4 logo
-    var ch3o=ch3*ss(cl((G-2.8)/0.2,0,1));   // chapter-3 OVERLAY (PC / xG / xT colour) visibility — fades to 0 over G[2.8,3], BEFORE the camera flip back to ch2/1 gets going (camera barely moves there), so the coloured surface fades out FIRST, then the pitch transforms
+    var ch3o=(isMid(3)?0:1)*ch3*ss(cl((G-2.8)/0.2,0,1));   // chapter-3 OVERLAY (PC / xG / xT colour) visibility — suppressed when ch3 is a jump intermediate (e.g. 4↔2) so the surface/readout don't flash mid-bridge — fades to 0 over G[2.8,3], BEFORE the camera flip back to ch2/1 gets going (camera barely moves there), so the coloured surface fades out FIRST, then the pitch transforms
     if(ch3>0.9){ if(ch3EnterT===null) ch3EnterT=t; } else if(ch3<0.3){ ch3EnterT=null; }   // mark when the checkers have settled on the board
     var pcReveal=urlPCR!==null?urlPCR:(ch3EnterT!==null?ss(cl((t-ch3EnterT-0.6)/0.5,0,1)):0);   // PC surface waits ~0.6s AFTER the checkers show, then fades in over 0.5s (?pcr overrides for capture)
     var _mf=ss(cl((t-modeT0)/0.5,0,1));   // chapter-3 display-mode crossfade (0.5 s — unified across all three chapters)
@@ -467,7 +467,7 @@
       [[52.5,0],[11,0],[94,0]].forEach(function(m){var q=P(m);ctx.beginPath();ctx.arc(q[0],q[1],Math.max(1.4,sc*0.5),0,6.283);ctx.fill();});
     }
     // === CHAPTER 1 + 3: Sony tracking (raw CV — "we read the game from video"). Ch1 = birdview dots; Ch3 = vertical tactical board with the pitch-control surface underneath ===
-    var ch1t=ss(cl((G-0.60)/0.24,0,1))*(1-ss(cl((G-1.0)/0.2,0,1)));   // chapter-1 CV visibility
+    var ch1t=(isMid(1)?0:1)*ss(cl((G-0.60)/0.24,0,1))*(1-ss(cl((G-1.0)/0.2,0,1)));   // chapter-1 CV visibility — suppressed when ch1 is a jump intermediate (e.g. 0↔2) so keypoints/tracking don't flash mid-bridge
     var ch1fo=ss(cl((t-ch1modeT0)/0.5,0,1)), ch1fi=ch1fo;   // ch1 page swap: simultaneous 0.5 s crossfade — unified with chapters 2 & 3 (no more out-then-in stagger)
     var ch1m0A=ch1Mode===0?ch1fi:(ch1ModePrev===0?1-ch1fo:0);   // page 1 — keypoints
     // pages 2 (trace estimation) + 3 (full tracking) share ONE continuous clip: the view stays solid across the 2↔3 swap — only the fan fades out and the rings fill in (p3: 0=page2 fan+rings … 1=page3 all solid)
@@ -598,6 +598,10 @@
   var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches, aDur=850;   // per-transition ms — set in step()/goTo(): flip (1↔2) snappy, entrance (0↔1) relaxed
   var cur=0, Gv=0, animing=false, gFrom=0, gTo=0, aT0=0, lastEnd=-1e9, t0=null, cvT0=null, tNow=0;
   function now(){return performance.now();}
+  // Is chapter `ch` a STRICT intermediate of the active jump? During a multi-chapter jump (e.g. 4↔2, 0↔2, 1↔4) G
+  // sweeps past chapters between the endpoints; suppressing their overlays (dots, captions, text, colour surfaces,
+  // clip) turns every cross-chapter jump into a clean scene-morph BRIDGE instead of a flash of the chapters flown past.
+  function isMid(ch){ if(!animing) return false; var lo=Math.min(gFrom,gTo), hi=Math.max(gFrom,gTo); return ch>lo+0.5 && ch<hi-0.5; }
   function step(dir){
     if(animing||now()-lastEnd<150) return;                   // ignore mid-transition / absorb fling + momentum tail
     if(cur===0&&dir>0&&tNow<1.3) return;                     // let the entrance logo fully ignite before the first morph
@@ -642,20 +646,20 @@
     draw(t, G, pshift, cvClip, clipT);
     htext.style.opacity=(ss(cl((t-0.7)/1.0,0,1))*(1-ss(cl(G/0.18,0,1)))).toFixed(2);   // entrance: slogan fades IN with the logo ignition (t 0.7→1.7s), then scroll fades it out
     var fade2=ss(cl((G-1)/0.2,0,1));   // CV-scene text clears FAST at the start of the flip (so it doesn't linger over the tilt)
-    var textP=ss(cl((G-0.58)/0.36,0,1))*(1-fade2);
+    var textP=(isMid(1)?0:1)*ss(cl((G-0.58)/0.36,0,1))*(1-fade2);   // ch1 copy + annotation — hidden when ch1 is a jump intermediate
     vizp.style.opacity=textP.toFixed(2); vizp.style.transform='translateX('+lp(40,0,textP).toFixed(0)+'px)';
     ch1note.style.opacity=textP.toFixed(2); ch1note.style.transform='translateY('+lp(8,0,textP).toFixed(0)+'px)';
     if(_ch1lx){ ch1note.style.left=(_ch1lx/dpr)+'px'; ch1note.style.top='auto'; ch1note.style.bottom=(H/dpr-_ch1ty/dpr+14)+'px'; }   // "|" on the pitch left edge; annotation bottom sits 14px above the pitch top
     var ch2P=directJump?0:(ss(cl((G-1.85)/0.13,0,1))*(1-ss(cl((G-2.05)/0.13,0,1))));   // chapter-2 copy + backdrop: FIXED bottom-right; fades in/out with the CHAPTER. Suppressed on a direct 1↔3/1↔4 jump so it doesn't flash as G sweeps past chapter 2.
     ch2txt.classList.remove('ldml'); ch2dark.classList.remove('ldml');
     ch2txt.style.opacity=ch2dark.style.opacity=ch2P.toFixed(2);
-    var ch3P=ss(cl((G-2.7)/0.28,0,1))*(1-ss(cl((G-3.32)/0.28,0,1)));   // chapter-3 copy (left): in as the Research board settles (~G3), out toward chapter 4
+    var ch3P=(isMid(3)?0:1)*ss(cl((G-2.7)/0.28,0,1))*(1-ss(cl((G-3.32)/0.28,0,1)));   // chapter-3 copy (left): in as the Research board settles (~G3), out toward chapter 4 — hidden when ch3 is a jump intermediate
     ch3txt.style.opacity=ch3P.toFixed(2); ch3txt.style.transform='translateX('+lp(-40,0,ch3P).toFixed(0)+'px)'; ch3link.style.pointerEvents=ch3P>0.5?'auto':'none';
     var ch3dot=ss(cl((G-2.5)/0.35,0,1))*(1-ss(cl((G-3.4)/0.4,0,1)));   // chapter-3 dot field — fades in with the Research board, out toward "Work with us"
     htex.style.opacity=Math.max(ss(cl((G-0.55)/0.38,0,1))*(1-fade2), ch3dot).toFixed(2);
     var _hx=portrait?50:(G<2?88:12), _hy=portrait?89:50, _hw=portrait?98:78, _hh=portrait?50:86;   // landscape: dots beside the pitch (RIGHT on ch1 / LEFT on ch3). Portrait: pitch is up top, so the glow drops LOW (behind the bottom text) — never on the pitch
     if(_hx!==htexX||_hy!==htexY){ htexX=_hx; htexY=_hy; htex.style.maskImage=htex.style.webkitMaskImage='radial-gradient('+_hw+'% '+_hh+'% at '+_hx+'% '+_hy+'%,#000 0%,rgba(0,0,0,.4) 42%,transparent 72%)'; }
-    _nowT=t; var _c3=ss(cl((G-2.0)/0.5,0,1))*(1-ss(cl((G-3.05)/0.3,0,1))); ch3dots.style.opacity=(_c3>0.6?'1':'0'); ch3dots.style.pointerEvents=_c3>0.6?'auto':'none';   // chapter-3 mode toggle: only on the Research board — fades out into chapter 4 (logo) like the board itself
+    _nowT=t; var _c3=ss(cl((G-2.0)/0.5,0,1))*(1-ss(cl((G-3.05)/0.3,0,1))); ch3dots.style.opacity=(_c3>0.6&&!isMid(3)?'1':'0'); ch3dots.style.pointerEvents=(_c3>0.6&&!isMid(3))?'auto':'none';   // chapter-3 mode toggle: only on the Research board — fades out into chapter 4 (logo) like the board itself
     if(_c3>0.01){
       if(H>W){ ch3dots.style.left=''; ch3dots.style.transform='translateX(-50%)'; ch3dots.style.top=(_ch3by/dpr+13)+'px'; ch3dots.style.bottom='auto'; }   // portrait: horizontal row just under the board (fallback)
       else { ch3dots.style.left=Math.max(10,_ch3lx/dpr-16)+'px'; ch3dots.style.transform='translate(-100%,-50%)'; ch3dots.style.top=(_ch3cy/dpr)+'px'; ch3dots.style.bottom='auto'; }   // landscape: vertical column just LEFT of the board's left sideline, centred on the pitch
@@ -688,7 +692,7 @@
     _ch3vis=_vis;
     // chapter-1 CV: page 1 (keypoints) ↔ page 2 (tracking) toggle, auto-rotating on the CV page
     var _v1=ss(cl((G-0.7)/0.2,0,1))*(1-ss(cl((G-1.1)/0.2,0,1)))>0.6;
-    if(ch1dots){ ch1dots.style.opacity=(_v1?'1':'0'); ch1dots.style.pointerEvents=_v1?'auto':'none'; if(_v1){ ch1dots.style.top=(_ch1by/dpr+13)+'px'; ch1dots.style.bottom='auto'; } }   // pin just under the CV pitch (same 13px gap as chapter 3)
+    if(ch1dots){ var _v1d=_v1&&!isMid(1); ch1dots.style.opacity=(_v1d?'1':'0'); ch1dots.style.pointerEvents=_v1d?'auto':'none'; if(_v1){ ch1dots.style.top=(_ch1by/dpr+13)+'px'; ch1dots.style.bottom='auto'; } }   // pin just under the CV pitch (same 13px gap as chapter 3)
     if(urlT===null&&urlC1===null&&_v1){
       if(!_ch1vis){ ch1modeAt=t; }   // ch1 just appeared → restart ONLY the dwell timer; do NOT reset the clip here (that would drop the seam fade to 0 and blink the trapezoid as it scrolls in)
       else if(t-ch1modeAt>=CH1_DUR[ch1Mode]){   // auto-advance sequence: trace(1) → keypoints(0) → tracking(2) → trace(1), all timed + smooth fade
