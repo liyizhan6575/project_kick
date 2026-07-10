@@ -109,11 +109,11 @@
   #ch1note b{font-weight:600;color:rgb(150,224,255)}
   @media(max-width:760px),(orientation:portrait){#ch1note{max-width:84vw;font-size:12.5px}}
   #stage{position:sticky;top:0;display:block;width:100%;height:100svh}
-  .htext{position:fixed;left:0;bottom:0;width:100%;text-align:center;padding-bottom:15vh;z-index:3;pointer-events:none;opacity:0}   /* hidden on first paint (like every panel); JS fades the slogan in with the entrance — prevents the pre-JS flash + pop-off */
-  .htext .slg{font:700 clamp(26px,7.2vw,48px)/1.05 'Teko',sans-serif;letter-spacing:.04em;text-transform:uppercase}
+  .htext{position:fixed;inset:0;text-align:center;z-index:3;pointer-events:none;opacity:0}   /* hidden on first paint (like every panel); JS fades the slogan in with the entrance — prevents the pre-JS flash + pop-off */
+  .htext .slg{position:absolute;left:0;width:100%;transform:translateY(-50%);font:700 clamp(26px,7.2vw,48px)/1.05 'Teko',sans-serif;letter-spacing:.04em;text-transform:uppercase}   /* `top` set by JS to the logo↔chevron midpoint (translateY(-50%) centres the box on it) — so the banner is centred between the two, identically in every language/font */
   .htext .slg .g{background:linear-gradient(100deg,#18c171,#2f8bff,#8b5cf6,#ef3b5b,#ff8a3b);-webkit-background-clip:text;background-clip:text;color:transparent}
   .htext .en{font:700 12px/1 ui-monospace,monospace;letter-spacing:.42em;color:#9aa0a8;margin-top:13px}
-  .htext .sc{margin-top:24px;display:flex;flex-direction:column;align-items:center;gap:1px}   /* scroll cue: three down-chevrons that pulse top→bottom so a new visitor knows to scroll */
+  .htext .sc{position:absolute;left:0;width:100%;bottom:15vh;display:flex;flex-direction:column;align-items:center;gap:1px}   /* scroll cue: three down-chevrons at a FIXED 15vh from the bottom, so a new visitor knows to scroll */
   .htext .sc .cv{width:30px;height:15px;display:block;overflow:visible;opacity:.22;animation:scPulse 1.5s cubic-bezier(.4,0,.6,1) infinite}
   .htext .sc .cv:nth-child(2){animation-delay:.15s}
   .htext .sc .cv:nth-child(3){animation-delay:.30s}
@@ -340,6 +340,8 @@
     cy=portrait?H*0.34:H/2;
     sc=(portrait?Math.min(W*0.82,H*0.48):W*0.43)/105; CCR=9.15*sc; VS=sc/10;   // landscape pitch = left column (43% W); portrait pitch = centred, capped by BOTH width (~82%) and height (~48%) so the tall vertical board (ch3) clears the topbar instead of overflowing upward
     var rf=portrait?0.62:0.33; RING=Math.min(W*rf,H*0.26)*0.75; RARC=RING*1.039; LW=RING*1.133;   // hero logo: wider width-fraction in portrait so it never shrinks away; Tier-5 R_ARC ×1.039, logo width 1.133·R
+    var _slg=document.querySelector('.slg');   // centre the hero banner on the midpoint between the logo's bottom edge and the scroll-chevron's top — identical in every language (the DOM box drifts otherwise, and Teko caps vs CJK glyphs sit differently in the line box)
+    if(_slg){ var _lb=(cy+RARC)/dpr, _ct=window.innerHeight*0.85-47; _slg.style.top=((_lb+_ct)/2)+'px'; }   // _lb: logo bottom (CSS px) ; _ct: chevron top (bottom:15vh, ~47px tall)
   }
   // ---- camera flip: birdview (2D top-down) <-> broadcast (3D angled). World x[0..105] y[-34..34], z up ----
   var CAM_B={eye:[52.5,0,1000],tgt:[52.5,0,0],foc:10000,up:[0,1,0]};     // birdview (== the 2D ortho)
