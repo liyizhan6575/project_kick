@@ -350,7 +350,7 @@
   function vN(a){var L=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/L,a[1]/L,a[2]/L];}
   function vX(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
   function vD(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
-  var camT=0, camG=1, directJump=false, logoJump=false, homeJump=false, cvJump=false, vizJump=false;   // camT: 0 birdview→1 broadcast ; camG drives B(birdview)→C(broadcast)→V(vertical) ; directJump: 1↔3 rotates B↔V top-down ; logoJump: 2↔4 corner logo EXPANDS + tilts into broadcast ; homeJump: 0↔4 logo SHIFTS + SCALES ; cvJump: 1↔4 corner logo → FLAT CV pitch ; vizJump: 0↔2 — the centre logo forms the pitch and tilts into broadcast as ONE motion (no flat-then-flip dwell)
+  var camT=0, camG=1, directJump=false, logoJump=false, homeJump=false, cvJump=false, vizJump=false, boardJump=false;   // camT: 0 birdview→1 broadcast ; camG drives B(birdview)→C(broadcast)→V(vertical) ; directJump: 1↔3 rotates B↔V top-down ; logoJump: 2↔4 corner logo EXPANDS + tilts into broadcast ; homeJump: 0↔4 logo SHIFTS + SCALES ; cvJump: 1↔4 corner logo → FLAT CV pitch ; vizJump: 0↔2 centre logo forms+tilts into broadcast ; boardJump: 0↔3 — the centre logo forms the pitch DIRECTLY in the vertical board orientation (no top-down rotation)
   function proj(Q){
     var eye,tgt,foc,up,z,voff;
     if(directJump){ var jp=ss(cl((camG-1)/2,0,1));                              // DIRECT 1↔3: top-down rotation birdview↔vertical (B & V share eye/tgt/foc; only up rotates 90°) — no broadcast tilt
@@ -359,6 +359,7 @@
       eye=vL(CAM_C.eye,CAM_V.eye,vj); tgt=vL(CAM_C.tgt,CAM_V.tgt,vj); foc=lp(CAM_C.foc,CAM_V.foc,vj); up=vN(vL(CAM_C.up,CAM_V.up,vj));
       z=lp(1.15,1,vj); voff=lp(H*0.07,0,vj); }
     else if(cvJump){ eye=CAM_B.eye; tgt=CAM_B.tgt; foc=CAM_B.foc; up=CAM_B.up; z=1; voff=0; }   // 1↔4 CV JUMP: hold FLAT birdview the whole jump — the CV pitch is horizontal, so it just enlarges from the corner (no tilt, no rotation)
+    else if(boardJump){ eye=CAM_V.eye; tgt=CAM_V.tgt; foc=CAM_V.foc; up=CAM_V.up; z=1; voff=0; }   // 0↔3 BOARD JUMP: hold the VERTICAL board pose the whole jump — the pitch forms straight into portrait around the (round) centre-circle logo, no top-down rotation
     else if(camG<=2){ var e=vizJump?ss(cl((camG-0.82)/0.9,0,1)):ss(cl(camG-1,0,1));   // B → C : birdview → broadcast. vizJump (0↔2): the tilt kicks in right as the pitch finishes forming (camG 0.82) and completes by ~1.72, so the pitch tilts into broadcast immediately after it forms — no flat birdview dwell
       eye=vL(CAM_B.eye,CAM_C.eye,e); tgt=vL(CAM_B.tgt,CAM_C.tgt,e); foc=lp(CAM_B.foc,CAM_C.foc,e); up=vN(vL(CAM_B.up,CAM_C.up,e));
       z=lp(1,1.15,e); voff=e*H*0.07; }
@@ -490,9 +491,9 @@
     var pcReveal=urlPCR!==null?urlPCR:(ch3EnterT!==null?ss(cl((t-ch3EnterT-0.6)/0.5,0,1)):0);   // PC surface waits ~0.6s AFTER the checkers show, then fades in over 0.5s (?pcr overrides for capture)
     var _mf=ss(cl((t-modeT0)/0.5,0,1));   // chapter-3 display-mode crossfade (0.5 s — unified across all three chapters)
     var mode0A=ch3Mode===0?_mf:(ch3ModePrev===0?1-_mf:0), mode1A=ch3Mode===1?_mf:(ch3ModePrev===1?1-_mf:0), mode2A=ch3Mode===2?_mf:(ch3ModePrev===2?1-_mf:0);
-    var clipP=(directJump||cvJump)?0:(ss(cl((G-1.12)/0.45,0,1))*(1-ss(cl((G-2.0)/0.5,0,1))));   // Opta broadcast clip: chapter 2 only. Suppressed on a directJump or a 1↔4 CV jump so it doesn't flash as G sweeps past chapter 2
+    var clipP=(directJump||cvJump||boardJump)?0:(ss(cl((G-1.12)/0.45,0,1))*(1-ss(cl((G-2.0)/0.5,0,1))));   // Opta broadcast clip: chapter 2 only. Suppressed on any jump that flies past ch2 (directJump / 1↔4 CV / 0↔3 board) so it doesn't flash
     var ccF=ss(cl((G-0.78)/0.18,0,1));   // centre-circle handoff: 4 entrance arcs → PROJECTED circle, completed during the entrance so the flip only TILTS it (no mid-flip crossfade)
-    var detail=(directJump||cvJump)?0:ss(cl(camT,0,1))*(1-ss(cl((G-2)/0.3,0,1)));   // green pitch + stadium fade in only over the LAST stretch of the 3→2 flip. Suppressed on a directJump / 1↔4 CV jump — those stay flat birdview, no broadcast grass
+    var detail=(directJump||cvJump||boardJump)?0:ss(cl(camT,0,1))*(1-ss(cl((G-2)/0.3,0,1)));   // green pitch + stadium fade in only over the LAST stretch of the 3→2 flip. Suppressed on directJump / 1↔4 CV / 0↔3 board — those never show the broadcast grass
     var bcFade=1-ss(cl(_ch2dk,0,1));   // chapter-2 pages 2+3 (lane dom / shot map): fade the broadcast grass/clip to BLACK — over the FULL page-change ease (was compressed /0.42), so the grass fades at the SAME speed as the overlay cross-fades. Applied only to the broadcast draw alphas below, not to `detail`.
     var st=(window.CLIPENGINE&&CLIPENGINE.ready)?CLIPENGINE.state(clipT||0):null;   // engine state (clip + phase), reused by env / players / chrome
     var clipFade=st?Math.min(ss(cl(st.localT/0.5,0,1)),ss(cl((st.total-st.localT)/0.5,0,1))):1;   // fade clip content in/out at each clip boundary (no hard cut between different clips); shared pitch + bowl stay steady
@@ -639,10 +640,11 @@
     if(lo===1&&hi===4) return 1150;   // 1↔4 corner logo ↔ flat CV pitch expand
     if(lo===2&&hi===4) return 1050;   // 2↔4 corner logo ↔ broadcast expand
     if(lo===0&&hi===2) return 1000;   // 0↔2 centre logo → broadcast (forms + tilts as one)
+    if(lo===0&&hi===3) return 1050;   // 0↔3 centre logo → vertical board (forms in portrait, no rotation)
     if(lo<2&&hi>2) return 1000+(d-2)*300;   // crosses the broadcast page (top-down-rotation family) — 1↔3 stays 1000, longer sweeps breathe
     if(d===1) return (lo===1&&hi===2)?680:(lo===0&&hi===1)?1400:850;   // single flips keep their tuned feel
     return 900+(d-1)*340; }   // any other multi-chapter jump; all ride smoothstep easing (see frame())
-  function setJump(a,b){ var lo=Math.min(a,b), hi=Math.max(a,b); homeJump=(lo===0&&hi===4); cvJump=(lo===1&&hi===4); vizJump=(lo===0&&hi===2); directJump=(lo<2&&hi>2)&&!homeJump&&!cvJump; logoJump=(lo===2&&hi===4); aDur=jDur(a,b); }
+  function setJump(a,b){ var lo=Math.min(a,b), hi=Math.max(a,b); homeJump=(lo===0&&hi===4); cvJump=(lo===1&&hi===4); vizJump=(lo===0&&hi===2); boardJump=(lo===0&&hi===3); directJump=(lo<2&&hi>2)&&!homeJump&&!cvJump&&!boardJump; logoJump=(lo===2&&hi===4); aDur=jDur(a,b); }
   function step(dir){
     if(animing||now()-lastEnd<150) return;                   // ignore mid-transition / absorb fling + momentum tail
     if(cur===0&&dir>0&&tNow<1.3) return;                     // let the entrance logo fully ignite before the first morph
@@ -672,14 +674,15 @@
     tNow=t;                                                      // expose to step() so the entrance logo plays before the first morph
     var G;
     if(urlP!==null){G=urlP;}                                    // ?p overrides for capture
-    else if(animing){var raw=cl((ts-aT0)/aDur,0,1), e=Math.abs(gTo-gFrom)>1.05?ss(raw):raw; G=lp(gFrom,gTo,e); Gv=G; if(raw>=1){animing=false; lastEnd=ts; Gv=gTo; G=gTo;}}   // single flips: linear (per-phase ss windows shape them). Multi-chapter jumps: smoothstep — eased but not so flat at the ends that it feels sluggish to start/settle
+    else if(animing){var raw=cl((ts-aT0)/aDur,0,1), e=Math.abs(gTo-gFrom)>1.05?ss(raw):raw; G=lp(gFrom,gTo,e); Gv=G; if(raw>=1){animing=false; lastEnd=ts; Gv=gTo; G=gTo; directJump=logoJump=homeJump=cvJump=vizJump=boardJump=false;}}   // single flips: linear (per-phase ss windows shape them). Multi-chapter jumps: smoothstep. Reset the jump flags on settle so a stale flag can't shift the resting anchor (e.g. a directJump leaving the entrance logo at the CV-left slide position)
     else {G=Gv;}                                                // settled on a page anchor
     var slideP=ss(cl((G-0.43)/0.15,0,1));   // slide is FAST: a short late window (G0.43→0.58) so the shift snaps after the slow shrink; single ss over linear G = smooth
     var cvClip;                                                 // clips start animating once the pitch is fully drawn (G≥0.93) — clock from 0 at that point
     if(urlT!==null){cvClip=urlT;} else if(G>=0.60){if(cvT0===null)cvT0=t; cvClip=t-cvT0;} else {cvT0=null; cvClip=0;}
     var clipT;                                                  // native broadcast-clip clock — restarts each time we enter the Viz page
     if(urlT!==null){clipT=urlT;} else if(G>1.0){if(clipT0===null)clipT0=t; clipT=t-clipT0;} else {clipT0=null; clipT=0;}
-    var pshift=directJump? lp(-W*0.215,W*0.215,ss(cl((G-1)/2,0,1)))   // direct 1↔3: slide straight left↔right (no centre dwell)
+    var pshift=boardJump? W*0.215*ss(cl((G-1)/2,0,1))   // 0↔3 board jump: centred while the logo forms (G<1), then slides RIGHT into the board column (G 1→3)
+                     : directJump? lp(-W*0.215,W*0.215,ss(cl((G-1)/2,0,1)))   // direct 1↔3: slide straight left↔right (no centre dwell)
                      : (G<=2)? lp(0,-W*0.215,slideP)*(1-ss(cl(G-1,0,1)))   // ch1 CV (left) → ch2 broadcast (centre)
                      : W*0.215*ss(cl(G-2,0,1));                            // ch2 broadcast (centre) → ch3 vertical board (RIGHT); ch4 keeps it RIGHT (board fades there, logo resolves bottom-right)
     if(portrait||homeJump||vizJump)pshift=0;                              // portrait: scene stays centred. homeJump/vizJump: logo & broadcast are both centred, so no column slide
@@ -690,7 +693,7 @@
     vizp.style.opacity=textP.toFixed(2); vizp.style.transform='translateX('+lp(40,0,textP).toFixed(0)+'px)';
     ch1note.style.opacity=textP.toFixed(2); ch1note.style.transform='translateY('+lp(8,0,textP).toFixed(0)+'px)';
     if(_ch1lx){ ch1note.style.left=(_ch1lx/dpr)+'px'; ch1note.style.top='auto'; ch1note.style.bottom=(H/dpr-_ch1ty/dpr+14)+'px'; }   // "|" on the pitch left edge; annotation bottom sits 14px above the pitch top
-    var ch2P=(directJump||homeJump||cvJump)?0:(ss(cl((G-1.85)/0.13,0,1))*(1-ss(cl((G-2.05)/0.13,0,1))));   // chapter-2 copy + backdrop: FIXED bottom-right; fades in/out with the CHAPTER. Suppressed on any jump that flies past chapter 2 (directJump / 0↔4 home / 1↔4 CV) so it doesn't flash.
+    var ch2P=(directJump||homeJump||cvJump||boardJump)?0:(ss(cl((G-1.85)/0.13,0,1))*(1-ss(cl((G-2.05)/0.13,0,1))));   // chapter-2 copy + backdrop: FIXED bottom-right; fades in/out with the CHAPTER. Suppressed on any jump flying past ch2 (directJump / 0↔4 / 1↔4 / 0↔3) so it doesn't flash.
     ch2txt.classList.remove('ldml');
     ch2txt.style.opacity=ch2P.toFixed(2);
     var ch3P=(isMid(3)?0:1)*ss(cl((G-2.7)/0.28,0,1))*(1-ss(cl((G-3.32)/0.28,0,1)));   // chapter-3 copy (left): in as the Research board settles (~G3), out toward chapter 4 — hidden when ch3 is a jump intermediate
@@ -705,7 +708,7 @@
       else { ch3dots.style.left=Math.max(10,_ch3lx/dpr-16)+'px'; ch3dots.style.transform='translate(-100%,-50%)'; ch3dots.style.top=(_ch3cy/dpr)+'px'; ch3dots.style.bottom='auto'; }   // landscape: vertical column just LEFT of the board's left sideline, centred on the pitch
     }
     // ── chapter-2 pages (goal replay → lane dominance → shot map → heatmap): auto-advancing, black-fade + per-page grow clocks ──
-    var _c2=(directJump||homeJump||cvJump)?0:(ss(cl((G-1.72)/0.18,0,1))*(1-ss(cl((G-2.08)/0.18,0,1))));   // broadcast-settled visibility (0 on any jump flying past ch2 — directJump / 0↔4 home / 1↔4 CV — so the ch2 dots don't flash)
+    var _c2=(directJump||homeJump||cvJump||boardJump)?0:(ss(cl((G-1.72)/0.18,0,1))*(1-ss(cl((G-2.08)/0.18,0,1))));   // broadcast-settled visibility (0 on any jump flying past ch2 — directJump / 0↔4 / 1↔4 / 0↔3 — so the ch2 dots don't flash)
     if(_c2<0.4&&ch2Mode!==0){ ch2Mode=0; _ch2ldT0=-99; _ch2smT0=-99; ch2modeT0=t; ch2dots.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',+x.dataset.m===0);}); }   // leaving chapter 2 → reset to the goal replay
     var _c2dt=Math.max(0,Math.min(0.05,t-_ch2prevT)); _ch2prevT=t;
     var _c2k=_c2dt?1-Math.pow(0.5,_c2dt/0.16):0;                       // exponential ease (~0.5 s crossfade — matches chapters 1 & 3)
