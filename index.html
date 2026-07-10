@@ -142,15 +142,14 @@
   .hamb.open span:nth-child(1){transform:translateY(6px) rotate(45deg)}
   .hamb.open span:nth-child(2){opacity:0}
   .hamb.open span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
-  @media(max-width:760px),(orientation:portrait){
-    .topbar{height:50px}
-    .hamb{display:flex}
-    .topbar .nav{position:fixed;top:50px;left:0;right:0;flex-direction:column;align-items:stretch;gap:0;background:rgba(10,10,10,.97);border-top:1px solid rgba(255,255,255,.07);box-shadow:0 18px 40px rgba(0,0,0,.5);padding:4px 0;overflow:visible;transform:translateY(-14px);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
-    .topbar .nav.open{transform:translateY(0);opacity:1;pointer-events:auto}
-    .topbar .nav a{padding:14px clamp(18px,6vw,30px);font-size:13px;letter-spacing:.12em;border-bottom:1px solid rgba(255,255,255,.04)}
-    .topbar .nav a:last-child{border-bottom:0}
-    .topbar .nav a:hover{background:rgba(255,255,255,.04);color:#cfd3da}
-  }
+  /* nav is ALWAYS a hamburger dropdown (every width / aspect ratio) — never a flat COMPUTER VISION · VISUALIZATION … link row */
+  .topbar{height:50px}
+  .hamb{display:flex}
+  .topbar .nav{position:fixed;top:50px;left:0;right:0;flex-direction:column;align-items:stretch;gap:0;background:rgba(10,10,10,.97);border-top:1px solid rgba(255,255,255,.07);box-shadow:0 18px 40px rgba(0,0,0,.5);padding:4px 0;overflow:visible;transform:translateY(-14px);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
+  .topbar .nav.open{transform:translateY(0);opacity:1;pointer-events:auto}
+  .topbar .nav a{padding:14px clamp(18px,6vw,30px);font-size:13px;letter-spacing:.12em;border-bottom:1px solid rgba(255,255,255,.04)}
+  .topbar .nav a:last-child{border-bottom:0}
+  .topbar .nav a:hover{background:rgba(255,255,255,.04);color:#cfd3da}
   /* right cluster: nav + language flags + hamburger */
   .topbar-right{display:flex;align-items:center;gap:clamp(12px,2vw,22px);flex:none;min-width:0}
   /* language toggle — round flags with a white edge */
@@ -336,11 +335,14 @@
   function vN(a){var L=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/L,a[1]/L,a[2]/L];}
   function vX(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
   function vD(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
-  var camT=0, camG=1, directJump=false;   // camT: 0 birdview→1 broadcast ; camG drives B(birdview)→C(broadcast)→V(vertical) ; directJump: 1↔3 jump rotates B↔V top-down, skipping the broadcast
+  var camT=0, camG=1, directJump=false, logoJump=false;   // camT: 0 birdview→1 broadcast ; camG drives B(birdview)→C(broadcast)→V(vertical) ; directJump: 1↔3 jump rotates B↔V top-down, skipping the broadcast ; logoJump: 2↔4 jump — the corner logo EXPANDS + tilts straight into the broadcast (no board-reform-then-flip)
   function proj(Q){
     var eye,tgt,foc,up,z,voff;
     if(directJump){ var jp=ss(cl((camG-1)/2,0,1));                              // DIRECT 1↔3: top-down rotation birdview↔vertical (B & V share eye/tgt/foc; only up rotates 90°) — no broadcast tilt
       eye=CAM_B.eye; tgt=CAM_B.tgt; foc=CAM_B.foc; up=vN(vL(CAM_B.up,CAM_V.up,jp)); z=1; voff=0; }
+    else if(logoJump){ var vj=ss(cl((camG-2)/2,0,1));                           // 2↔4 LOGO JUMP: broadcast↔vertical tilt spread across the WHOLE jump (camG 2→4), so the corner logo TILTS while it EXPANDS — one gesture, no board-reform-then-flip
+      eye=vL(CAM_C.eye,CAM_V.eye,vj); tgt=vL(CAM_C.tgt,CAM_V.tgt,vj); foc=lp(CAM_C.foc,CAM_V.foc,vj); up=vN(vL(CAM_C.up,CAM_V.up,vj));
+      z=lp(1.15,1,vj); voff=lp(H*0.07,0,vj); }
     else if(camG<=2){ var e=ss(cl(camG-1,0,1));                                 // B → C : birdview → broadcast
       eye=vL(CAM_B.eye,CAM_C.eye,e); tgt=vL(CAM_B.tgt,CAM_C.tgt,e); foc=lp(CAM_B.foc,CAM_C.foc,e); up=vN(vL(CAM_B.up,CAM_C.up,e));
       z=lp(1,1.15,e); voff=e*H*0.07; }
@@ -436,8 +438,8 @@
     _ch1lx=Math.min(P([0,-34])[0], P([0,34])[0])+(shift||0);   // CV pitch LEFT edge (on-screen, incl. the pitch's left-shift) → the annotation "|" aligns to it
     // chapter-4 logo geometry (screen space) — shared by the board collapse AND the logo formation
     var S4=Math.min(W,H)*(portrait?0.066:0.055), RARC4=S4*1.039, CCR4=S4*0.2, RING4=S4, LW4=S4*1.133, l4x=W-RARC4-W*0.045, l4y=H-RARC4-H*0.055;   // portrait: bigger badge so its height ≈ the partnerships block (bottom-right logo aligns with the partnership strip)
-    if(G>3){   // chapter 4: the board moves + shrinks into its OWN centre circle, which lands on the logo seed — pivot the whole board on the pitch centre circle, scale it down to the logo's centre-circle size, slide it to the logo anchor
-      var bl4=ss(cl((G-3)/0.5,0,1)), pbc=proj([52.5,0,0]), pbe=proj([61.65,0,0]), ccrB=Math.hypot(pbe[0]-pbc[0],pbe[1]-pbc[1])||1, sB=lp(1,CCR4/ccrB,bl4);
+    if(logoJump?G>2.0:G>3){   // board moves + shrinks into its OWN centre circle at the logo seed. Normally only over ch4 (G>3); on a 2↔4 logo jump it spans the WHOLE jump (G 2→4) so the pitch expands out of the corner across the entire tilt
+      var bl4=logoJump?ss(cl((G-2)/2,0,1)):ss(cl((G-3)/0.5,0,1)), pbc=proj([52.5,0,0]), pbe=proj([61.65,0,0]), ccrB=Math.hypot(pbe[0]-pbc[0],pbe[1]-pbc[1])||1, sB=lp(1,CCR4/ccrB,bl4);
       ctx.translate(lp(pbc[0],l4x-(shift||0),bl4), lp(pbc[1],l4y,bl4)); ctx.scale(sB,sB); ctx.translate(-pbc[0],-pbc[1]);
     }
     var ch3=ss(cl((G-2.0)/0.5,0,1))*(1-ss(cl((G-3.05)/0.3,0,1)));   // chapter 3 = vertical board; fades out as it collapses into the chapter-4 logo
@@ -457,7 +459,7 @@
     // === pitch fades in as a whole while the 4 arcs close into the centre-circle ring (smooth, all-at-once — no centre-out write) ===
     var pf=ss(cl((p-0.06)/0.5,0,1));   // same window as the arc→ring collapse (mp): every line appears together
     if(pf>0.003){
-      var pgrey=(1-detail)*(1-ss(cl((G-3.1)/0.45,0,1)));   // grey pitch fades over G 3.1→3.55 as the board collapses into the chapter-4 logo (its centre circle hands off to the logo seed)
+      var pgrey=logoJump?(1-detail):(1-detail)*(1-ss(cl((G-3.1)/0.45,0,1)));   // grey pitch fades over G 3.1→3.55 as the board collapses into the ch4 logo — but on a 2↔4 logo jump it stays lit the whole expand (only ceding to the green grass as detail fades in near ch2)
       ctx.strokeStyle='#8f8f8f';ctx.lineWidth=Math.max(1.3*dpr,sc*0.2);ctx.globalAlpha=0.55*pf*pgrey;   // grey birdview pitch fades out as the green broadcast pitch fades in
       for(var i=0;i<GEO.length;i++) partial(GEO[i],1);   // inner lines + outer boundary, full, at once
       var ccA=0.55*pf*ccF*pgrey;   // projected centre circle — a normal pitch line: present from page 1 (flat), hands off to the green pitch's own circle through the flip
@@ -602,12 +604,17 @@
   // sweeps past chapters between the endpoints; suppressing their overlays (dots, captions, text, colour surfaces,
   // clip) turns every cross-chapter jump into a clean scene-morph BRIDGE instead of a flash of the chapters flown past.
   function isMid(ch){ if(!animing) return false; var lo=Math.min(gFrom,gTo), hi=Math.max(gFrom,gTo); return ch>lo+0.5 && ch<hi-0.5; }
+  (function(){var v=new URLSearchParams(location.search).get('gj'); if(v!==null){var a=v.split(',').map(Number); gFrom=a[0]; gTo=a[1]; cur=a[1]; animing=true; setJump(a[0],a[1]);}})();   // capture hook: ?gj=from,to freezes a mid-jump (isMid/directJump/logoJump live) — pair with ?p to pick the G along the sweep
+  function jDur(a,b){ if(RM)return 1; var d=Math.abs(b-a), lo=Math.min(a,b), hi=Math.max(a,b);
+    if(lo<2&&hi>2) return 1000+(d-2)*300;   // crosses the broadcast page (top-down-rotation family) — 1↔3 stays 1000, longer sweeps breathe
+    if(d===1) return (lo===1&&hi===2)?680:(lo===0&&hi===1)?1400:850;   // single flips keep their tuned feel
+    return 900+(d-1)*340; }   // multi-chapter jumps (2↔4, 0↔2, …) get room; they also ride smootherstep easing (see frame())
+  function setJump(a,b){ directJump=(Math.min(a,b)<2&&Math.max(a,b)>2); logoJump=(Math.min(a,b)===2&&Math.max(a,b)===4); aDur=jDur(a,b); }
   function step(dir){
     if(animing||now()-lastEnd<150) return;                   // ignore mid-transition / absorb fling + momentum tail
     if(cur===0&&dir>0&&tNow<1.3) return;                     // let the entrance logo fully ignite before the first morph
     var n=cur+dir; if(n<0||n>=ANCH.length) return;
-    directJump=(Math.min(cur,n)<2&&Math.max(cur,n)>2);   // jump that would cross the broadcast page → take the direct 1↔3 path
-    aDur=RM?1:(directJump?1000:(Math.min(cur,n)===1&&Math.max(cur,n)===2?680:(Math.max(cur,n)>=2?850:1400)));   // 1↔2 flip fastest (680); other flips 850; entrance (0↔1) relaxed (1400); direct 1↔3 jump 1000
+    setJump(cur,n);
     gFrom=Gv; gTo=ANCH[n]; aT0=now(); animing=true; cur=n; updateNav();
   }
   addEventListener('wheel',function(e){e.preventDefault(); if(Math.abs(e.deltaY)>4) step(e.deltaY>0?1:-1);},{passive:false});
@@ -622,7 +629,7 @@
   var topbar=document.getElementById('topbar'), navlinks=document.querySelectorAll('#nav a'), hamb=document.getElementById('hamb'), navEl=document.getElementById('nav');
   function closeMenu(){ navEl.classList.remove('open'); hamb.classList.remove('open'); }
   function updateNav(){for(var i=0;i<navlinks.length;i++)navlinks[i].classList.toggle('on',+navlinks[i].dataset.page===cur);}
-  function goTo(n){n=Math.round(cl(n,0,ANCH.length-1)); if(animing||now()-lastEnd<150||n===cur)return; directJump=(Math.min(cur,n)<2&&Math.max(cur,n)>2); aDur=RM?1:(directJump?1000:(Math.min(cur,n)===1&&Math.max(cur,n)===2?680:(Math.max(cur,n)>=2?850:1400))); gFrom=Gv; gTo=ANCH[n]; aT0=now(); animing=true; cur=n; updateNav();}
+  function goTo(n){n=Math.round(cl(n,0,ANCH.length-1)); if(animing||now()-lastEnd<150||n===cur)return; setJump(cur,n); gFrom=Gv; gTo=ANCH[n]; aT0=now(); animing=true; cur=n; updateNav();}
   Array.prototype.forEach.call(document.querySelectorAll('[data-page]'),function(el){el.addEventListener('click',function(e){e.preventDefault(); goTo(+el.dataset.page); closeMenu();});});
   updateNav();
   hamb.addEventListener('click',function(e){ e.stopPropagation(); var o=!navEl.classList.contains('open'); navEl.classList.toggle('open',o); hamb.classList.toggle('open',o); });
@@ -632,7 +639,7 @@
     tNow=t;                                                      // expose to step() so the entrance logo plays before the first morph
     var G;
     if(urlP!==null){G=urlP;}                                    // ?p overrides for capture
-    else if(animing){var e=cl((ts-aT0)/aDur,0,1); G=lp(gFrom,gTo,e); Gv=G; if(e>=1){animing=false; lastEnd=ts; Gv=gTo; G=gTo;}}   // G linear in time — per-phase ss windows shape shrink (slow) vs slide (fast) independently
+    else if(animing){var raw=cl((ts-aT0)/aDur,0,1), e=Math.abs(gTo-gFrom)>1.05?raw*raw*raw*(raw*(raw*6-15)+10):raw; G=lp(gFrom,gTo,e); Gv=G; if(raw>=1){animing=false; lastEnd=ts; Gv=gTo; G=gTo;}}   // single flips: linear (per-phase ss windows shape them). Multi-chapter jumps: smootherstep so the long G-sweep eases in/out instead of a hard-velocity start/stop
     else {G=Gv;}                                                // settled on a page anchor
     var slideP=ss(cl((G-0.43)/0.15,0,1));   // slide is FAST: a short late window (G0.43→0.58) so the shift snaps after the slow shrink; single ss over linear G = smooth
     var cvClip;                                                 // clips start animating once the pitch is fully drawn (G≥0.93) — clock from 0 at that point
