@@ -350,7 +350,7 @@
   function vN(a){var L=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/L,a[1]/L,a[2]/L];}
   function vX(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
   function vD(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
-  var camT=0, camG=1, directJump=false, logoJump=false, homeJump=false, cvJump=false;   // camT: 0 birdview→1 broadcast ; camG drives B(birdview)→C(broadcast)→V(vertical) ; directJump: 1↔3 jump rotates B↔V top-down, skipping the broadcast ; logoJump: 2↔4 jump — the corner logo EXPANDS + tilts straight into the broadcast ; homeJump: 0↔4 — the KK logo just SHIFTS + SCALES between centre and corner ; cvJump: 1↔4 — the corner logo EXPANDS straight into the FLAT birdview CV pitch (no vertical board, no rotation)
+  var camT=0, camG=1, directJump=false, logoJump=false, homeJump=false, cvJump=false, vizJump=false;   // camT: 0 birdview→1 broadcast ; camG drives B(birdview)→C(broadcast)→V(vertical) ; directJump: 1↔3 rotates B↔V top-down ; logoJump: 2↔4 corner logo EXPANDS + tilts into broadcast ; homeJump: 0↔4 logo SHIFTS + SCALES ; cvJump: 1↔4 corner logo → FLAT CV pitch ; vizJump: 0↔2 — the centre logo forms the pitch and tilts into broadcast as ONE motion (no flat-then-flip dwell)
   function proj(Q){
     var eye,tgt,foc,up,z,voff;
     if(directJump){ var jp=ss(cl((camG-1)/2,0,1));                              // DIRECT 1↔3: top-down rotation birdview↔vertical (B & V share eye/tgt/foc; only up rotates 90°) — no broadcast tilt
@@ -359,7 +359,7 @@
       eye=vL(CAM_C.eye,CAM_V.eye,vj); tgt=vL(CAM_C.tgt,CAM_V.tgt,vj); foc=lp(CAM_C.foc,CAM_V.foc,vj); up=vN(vL(CAM_C.up,CAM_V.up,vj));
       z=lp(1.15,1,vj); voff=lp(H*0.07,0,vj); }
     else if(cvJump){ eye=CAM_B.eye; tgt=CAM_B.tgt; foc=CAM_B.foc; up=CAM_B.up; z=1; voff=0; }   // 1↔4 CV JUMP: hold FLAT birdview the whole jump — the CV pitch is horizontal, so it just enlarges from the corner (no tilt, no rotation)
-    else if(camG<=2){ var e=ss(cl(camG-1,0,1));                                 // B → C : birdview → broadcast
+    else if(camG<=2){ var e=vizJump?ss(cl((camG-0.82)/0.9,0,1)):ss(cl(camG-1,0,1));   // B → C : birdview → broadcast. vizJump (0↔2): the tilt kicks in right as the pitch finishes forming (camG 0.82) and completes by ~1.72, so the pitch tilts into broadcast immediately after it forms — no flat birdview dwell
       eye=vL(CAM_B.eye,CAM_C.eye,e); tgt=vL(CAM_B.tgt,CAM_C.tgt,e); foc=lp(CAM_B.foc,CAM_C.foc,e); up=vN(vL(CAM_B.up,CAM_C.up,e));
       z=lp(1,1.15,e); voff=e*H*0.07; }
     else if(camG<=3){ var v=ss(cl(camG-2,0,1));                                // C → V : broadcast → vertical tactical board (slerp up 90°)
@@ -580,7 +580,8 @@
         ctx.beginPath();ctx.arc(qx,qy,rr,0,6.283);ctx.fill();}}
     ctx.restore();
     // === CHAPTER 4 · "Work with us" — the centre circle grows back out into the KICK logo (4 arcs + ticks + halftone), bottom-right. Echoes the intro logo build, REVERSED. Centre reserved for copy (TBD). ===
-    var c4=ss(cl((G-3.35)/0.55,0,1));   // formation 0→1 over G 3.35→3.9 — begins as the collapsing board's centre circle lands on the logo seed (clean hand-off)
+    var _c4s=(logoJump||cvJump)?2.85:3.35, _c4r=(logoJump||cvJump)?0.95:0.55;   // logo/cv jumps: the corner badge lingers LONGER (fades out by ~G2.85, not 3.35) so it stays visible as the bridge while the expanding pitch is still small in the corner — kills the mid-jump lull
+    var c4=ss(cl((G-_c4s)/_c4r,0,1));   // formation 0→1 — begins as the collapsing board's centre circle lands on the logo seed (clean hand-off)
     if(c4>0.003){
       if(c4>=0.99){ if(_c4t0===null)_c4t0=t; } else { _c4t0=null; }   // morph cycle starts only once the corner logo has fully assembled (so it forms AS the logo first)
       var mt4=(urlMT!==null)?urlMT:(_c4t0!==null?(t-_c4t0):0);
@@ -634,12 +635,14 @@
   function isMid(ch){ if(!animing) return false; var lo=Math.min(gFrom,gTo), hi=Math.max(gFrom,gTo); return ch>lo+0.5 && ch<hi-0.5; }
   (function(){var v=new URLSearchParams(location.search).get('gj'); if(v!==null){var a=v.split(',').map(Number); gFrom=a[0]; gTo=a[1]; cur=a[1]; animing=true; setJump(a[0],a[1]);}})();   // capture hook: ?gj=from,to freezes a mid-jump (isMid/directJump/logoJump live) — pair with ?p to pick the G along the sweep
   function jDur(a,b){ if(RM)return 1; var d=Math.abs(b-a), lo=Math.min(a,b), hi=Math.max(a,b);
-    if(lo===0&&hi===4) return 1150;   // 0↔4 home logo shift+scale — a quick, direct glide
-    if(lo===1&&hi===4) return 1300;   // 1↔4 corner logo ↔ flat CV pitch expand
+    if(lo===0&&hi===4) return 1120;   // 0↔4 home logo shift+scale
+    if(lo===1&&hi===4) return 1150;   // 1↔4 corner logo ↔ flat CV pitch expand
+    if(lo===2&&hi===4) return 1050;   // 2↔4 corner logo ↔ broadcast expand
+    if(lo===0&&hi===2) return 1000;   // 0↔2 centre logo → broadcast (forms + tilts as one)
     if(lo<2&&hi>2) return 1000+(d-2)*300;   // crosses the broadcast page (top-down-rotation family) — 1↔3 stays 1000, longer sweeps breathe
     if(d===1) return (lo===1&&hi===2)?680:(lo===0&&hi===1)?1400:850;   // single flips keep their tuned feel
-    return 900+(d-1)*340; }   // multi-chapter jumps (2↔4, 0↔2, …) get room; they also ride smootherstep easing (see frame())
-  function setJump(a,b){ var lo=Math.min(a,b), hi=Math.max(a,b); homeJump=(lo===0&&hi===4); cvJump=(lo===1&&hi===4); directJump=(lo<2&&hi>2)&&!homeJump&&!cvJump; logoJump=(lo===2&&hi===4); aDur=jDur(a,b); }
+    return 900+(d-1)*340; }   // any other multi-chapter jump; all ride smoothstep easing (see frame())
+  function setJump(a,b){ var lo=Math.min(a,b), hi=Math.max(a,b); homeJump=(lo===0&&hi===4); cvJump=(lo===1&&hi===4); vizJump=(lo===0&&hi===2); directJump=(lo<2&&hi>2)&&!homeJump&&!cvJump; logoJump=(lo===2&&hi===4); aDur=jDur(a,b); }
   function step(dir){
     if(animing||now()-lastEnd<150) return;                   // ignore mid-transition / absorb fling + momentum tail
     if(cur===0&&dir>0&&tNow<1.3) return;                     // let the entrance logo fully ignite before the first morph
@@ -669,7 +672,7 @@
     tNow=t;                                                      // expose to step() so the entrance logo plays before the first morph
     var G;
     if(urlP!==null){G=urlP;}                                    // ?p overrides for capture
-    else if(animing){var raw=cl((ts-aT0)/aDur,0,1), e=Math.abs(gTo-gFrom)>1.05?raw*raw*raw*(raw*(raw*6-15)+10):raw; G=lp(gFrom,gTo,e); Gv=G; if(raw>=1){animing=false; lastEnd=ts; Gv=gTo; G=gTo;}}   // single flips: linear (per-phase ss windows shape them). Multi-chapter jumps: smootherstep so the long G-sweep eases in/out instead of a hard-velocity start/stop
+    else if(animing){var raw=cl((ts-aT0)/aDur,0,1), e=Math.abs(gTo-gFrom)>1.05?ss(raw):raw; G=lp(gFrom,gTo,e); Gv=G; if(raw>=1){animing=false; lastEnd=ts; Gv=gTo; G=gTo;}}   // single flips: linear (per-phase ss windows shape them). Multi-chapter jumps: smoothstep — eased but not so flat at the ends that it feels sluggish to start/settle
     else {G=Gv;}                                                // settled on a page anchor
     var slideP=ss(cl((G-0.43)/0.15,0,1));   // slide is FAST: a short late window (G0.43→0.58) so the shift snaps after the slow shrink; single ss over linear G = smooth
     var cvClip;                                                 // clips start animating once the pitch is fully drawn (G≥0.93) — clock from 0 at that point
@@ -679,7 +682,7 @@
     var pshift=directJump? lp(-W*0.215,W*0.215,ss(cl((G-1)/2,0,1)))   // direct 1↔3: slide straight left↔right (no centre dwell)
                      : (G<=2)? lp(0,-W*0.215,slideP)*(1-ss(cl(G-1,0,1)))   // ch1 CV (left) → ch2 broadcast (centre)
                      : W*0.215*ss(cl(G-2,0,1));                            // ch2 broadcast (centre) → ch3 vertical board (RIGHT); ch4 keeps it RIGHT (board fades there, logo resolves bottom-right)
-    if(portrait||homeJump)pshift=0;                                       // portrait: scene stays centred. homeJump: the logo glides in screen space, no column slide
+    if(portrait||homeJump||vizJump)pshift=0;                              // portrait: scene stays centred. homeJump/vizJump: logo & broadcast are both centred, so no column slide
     draw(t, G, pshift, cvClip, clipT);
     htext.style.opacity=(ss(cl((t-0.7)/1.0,0,1))*(1-ss(cl(G/0.18,0,1)))).toFixed(2);   // entrance: slogan fades IN with the logo ignition (t 0.7→1.7s), then scroll fades it out
     var fade2=ss(cl((G-1)/0.2,0,1));   // CV-scene text clears FAST at the start of the flip (so it doesn't linger over the tilt)
