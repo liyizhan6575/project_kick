@@ -627,7 +627,7 @@
   (function(){var v=new URLSearchParams(location.search).get('m'); if(v!==null){ch3Mode=+v; ch3dots.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',+x.dataset.m===ch3Mode);});}})();   // capture hook: force a chapter-3 mode
   // ---- GUIDED PAGE MODEL: one gesture = one page; G tweens between anchors and settles exactly on the page ----
   var ANCH=[0,1,2,3,4];                                      // page G-anchors: 0 = entrance, 1 = CV scene, 2 = Viz (broadcast), 3 = Football Science (vertical board), 4 = Work with us (penalty POV)
-  var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches, aDur=850;   // per-transition ms — set in step()/goTo(): flip (1↔2) snappy, entrance (0↔1) relaxed
+  var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches, aDur=850, FORM_MS=1400;   // per-transition ms — set in step()/goTo(): flip (1↔2) snappy, entrance (0↔1) relaxed. FORM_MS = the logo↔pitch formation duration, shared by 0↔1 and the entrance jumps so the morph paces identically
   var cur=0, Gv=0, animing=false, gFrom=0, gTo=0, aT0=0, lastEnd=-1e9, t0=null, cvT0=null, tNow=0;
   function now(){return performance.now();}
   // Is chapter `ch` a STRICT intermediate of the active jump? During a multi-chapter jump (e.g. 4↔2, 0↔2, 1↔4) G
@@ -639,10 +639,10 @@
     if(lo===0&&hi===4) return 1120;   // 0↔4 home logo shift+scale
     if(lo===1&&hi===4) return 1150;   // 1↔4 corner logo ↔ flat CV pitch expand
     if(lo===2&&hi===4) return 1050;   // 2↔4 corner logo ↔ broadcast expand
-    if(lo===0&&hi===2) return 1000;   // 0↔2 centre logo → broadcast (forms + tilts as one)
-    if(lo===0&&hi===3) return 1050;   // 0↔3 centre logo → vertical board (forms in portrait, no rotation)
+    if(lo===0&&hi===2) return FORM_MS+650;   // 0↔2: formation paced exactly like 0↔1 (FORM_MS), then tilt to broadcast
+    if(lo===0&&hi===3) return FORM_MS+750;   // 0↔3: formation paced like 0↔1 (FORM_MS), then slide into the board
     if(lo<2&&hi>2) return 1000+(d-2)*300;   // crosses the broadcast page (top-down-rotation family) — 1↔3 stays 1000, longer sweeps breathe
-    if(d===1) return (lo===1&&hi===2)?680:(lo===0&&hi===1)?1400:850;   // single flips keep their tuned feel
+    if(d===1) return (lo===1&&hi===2)?680:(lo===0&&hi===1)?FORM_MS:850;   // single flips keep their tuned feel; 0↔1 IS the formation (FORM_MS)
     return 900+(d-1)*340; }   // any other multi-chapter jump; all ride smoothstep easing (see frame())
   function setJump(a,b){ var lo=Math.min(a,b), hi=Math.max(a,b); homeJump=(lo===0&&hi===4); cvJump=(lo===1&&hi===4); vizJump=(lo===0&&hi===2); boardJump=(lo===0&&hi===3); directJump=(lo<2&&hi>2)&&!homeJump&&!cvJump&&!boardJump; logoJump=(lo===2&&hi===4); aDur=jDur(a,b); }
   function step(dir){
@@ -674,14 +674,19 @@
     tNow=t;                                                      // expose to step() so the entrance logo plays before the first morph
     var G;
     if(urlP!==null){G=urlP;}                                    // ?p overrides for capture
-    else if(animing){var raw=cl((ts-aT0)/aDur,0,1), e=Math.abs(gTo-gFrom)>1.05?ss(raw):raw; G=lp(gFrom,gTo,e); Gv=G; if(raw>=1){animing=false; lastEnd=ts; Gv=gTo; G=gTo; directJump=logoJump=homeJump=cvJump=vizJump=boardJump=false;}}   // single flips: linear (per-phase ss windows shape them). Multi-chapter jumps: smoothstep. Reset the jump flags on settle so a stale flag can't shift the resting anchor (e.g. a directJump leaving the entrance logo at the CV-left slide position)
+    else if(animing){var raw=cl((ts-aT0)/aDur,0,1);
+      if(vizJump||boardJump){ var _tg=Math.max(gFrom,gTo), _f1=FORM_MS/aDur;   // entrance transitions (0↔2, 0↔3): pace the logo↔pitch FORMATION segment (G 0↔1) EXACTLY like page 0↔1 — a fixed FORM_MS, linear — so the centre-circle↔logo morph is never rushed; then ease through the target segment (G 1↔broadcast/board)
+        G = (gFrom===0) ? (raw<_f1 ? raw/_f1 : lp(1,_tg,ss((raw-_f1)/(1-_f1))))   // forward: formation 0→1, then 1→target
+                        : (raw<1-_f1 ? lp(_tg,1,ss(raw/(1-_f1))) : lp(1,0,(raw-(1-_f1))/_f1)); }   // reverse: target→1, then formation 1→0
+      else { G=lp(gFrom,gTo, Math.abs(gTo-gFrom)>1.05?ss(raw):raw); }   // single flips: linear ; other multi-chapter jumps: smoothstep
+      Gv=G; if(raw>=1){animing=false; lastEnd=ts; Gv=gTo; G=gTo; directJump=logoJump=homeJump=cvJump=vizJump=boardJump=false;}}   // reset the jump flags on settle so a stale flag can't shift the resting anchor
     else {G=Gv;}                                                // settled on a page anchor
     var slideP=ss(cl((G-0.43)/0.15,0,1));   // slide is FAST: a short late window (G0.43→0.58) so the shift snaps after the slow shrink; single ss over linear G = smooth
     var cvClip;                                                 // clips start animating once the pitch is fully drawn (G≥0.93) — clock from 0 at that point
     if(urlT!==null){cvClip=urlT;} else if(G>=0.60){if(cvT0===null)cvT0=t; cvClip=t-cvT0;} else {cvT0=null; cvClip=0;}
     var clipT;                                                  // native broadcast-clip clock — restarts each time we enter the Viz page
     if(urlT!==null){clipT=urlT;} else if(G>1.0){if(clipT0===null)clipT0=t; clipT=t-clipT0;} else {clipT0=null; clipT=0;}
-    var pshift=boardJump? W*0.215*ss(cl((G-1)/2,0,1))   // 0↔3 board jump: centred while the logo forms (G<1), then slides RIGHT into the board column (G 1→3)
+    var pshift=boardJump? W*0.215*ss(cl((G-0.82)/2.18,0,1))   // 0↔3 board jump: centred while the logo forms, then slides RIGHT into the board column starting as the pitch finishes forming (G 0.82→3) — no formed-and-waiting hold
                      : directJump? lp(-W*0.215,W*0.215,ss(cl((G-1)/2,0,1)))   // direct 1↔3: slide straight left↔right (no centre dwell)
                      : (G<=2)? lp(0,-W*0.215,slideP)*(1-ss(cl(G-1,0,1)))   // ch1 CV (left) → ch2 broadcast (centre)
                      : W*0.215*ss(cl(G-2,0,1));                            // ch2 broadcast (centre) → ch3 vertical board (RIGHT); ch4 keeps it RIGHT (board fades there, logo resolves bottom-right)
