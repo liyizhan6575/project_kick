@@ -17,6 +17,7 @@ This module contains implementations and experiments around football analytics m
 | Name | File Link | Data Input | Status |
 | :--- | :--- | :--- | :--- | 
 | Expected Goals (xG) | [`xG.ipynb`](./football_metrics/xG.ipynb) | Event | 🟢 Demo Available |
+| Expected Assists (xA) | [`xA.ipynb`](./football_metrics/xA.ipynb) | Event | 🟢 Demo Available |
 | Expected Threat (xT) | [`xT.ipynb`](./football_metrics/xT.ipynb) | Event | 🟢 Demo Available |
 | Pitch Control | [`pitch_control.ipynb`](./football_metrics/pitch_control.ipynb) | Tracking | 🟢 Demo Available |
 | Passing Network | [`passing_network.ipynb`](./football_metrics/passing_network.ipynb) | Event | 🟢 Demo Available |
