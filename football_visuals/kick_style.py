@@ -28,7 +28,7 @@ __all__ = [
     # house helpers
     "apply_kick_style", "draw_kick_pitch", "kick_caption", "kick_cbar", "kick_checker",
     "kick_contour", "kick_flat_legend", "kick_grid", "kick_grid_cbar", "kick_grid_header",
-    "kick_grid_title", "kick_header_legend", "kick_heatmap", "kick_hide_origin_zero",
+    "kick_grid_title", "kick_heatmap", "kick_hide_origin_zero",
     "kick_inside_legend", "kick_legend", "kick_node_icon", "kick_panel_label", "kick_pitch",
     "kick_reserve_legend", "kick_smart_labels", "kick_swatch", "kick_tiered_title",
     "kick_bar_labels", "kick_clip", "kick_tilt_big_ticks", "kick_title", "kick_verify_margins",
@@ -174,6 +174,8 @@ KICK_LAYOUT = {
     "sub_pt":         18, "sub_weight":  "normal", "sub_opacity":  0.60,
     "axis_label_pt":  14, "axis_label_opacity": 0.75,
     "axis_unit_opacity": 0.40,     # a trailing "(m/s)" recedes: the eye reads the quantity, then the unit
+    "panel_title_pad_pt": 13,      # panel title ↔ its panel: ONE fixed gap, for subplot grids
+    #   (ax.set_title(pad=…)) AND pitch grids (kick_panel_label) — never centred in leftover space
     "bar_label_pt":   5,           # value label ↔ bar end: a typographic gap, so it holds at any data range
     "bar_label_headroom": 0.10,    # …and the value axis grows 10% so the label never touches the plot edge
     "tick_pt":        12, "tick_opacity": 0.45,
@@ -236,7 +238,7 @@ def _xtick_overhang(axes, target_x, inv, renderer):
 
 
 def kick_title(fig, ax, title, subtitle=None, pitch=True, size=20, sub_size=18,
-               reserve=0.24, logo=True, logo_alpha=LOGO_ALPHA, logo_cap=0.26, margin_in=KICK_MARGIN_IN):
+               logo=True, logo_alpha=LOGO_ALPHA, logo_cap=0.26, margin_in=KICK_MARGIN_IN):
     """Bold title + optional muted subtitle, centred, with a small icon badge top-right. On a PITCH: header
     centred over the pitch, badge on the right touchline. On a NON-PITCH chart (ticks + labels): a **uniform
     inset** — the same margin `margin_in` from every image edge to the header top, the leftmost label, the
@@ -566,29 +568,6 @@ def kick_swatch(color, label, alpha=0.32, lw=2):
     return Patch(facecolor=to_rgba(color, alpha), edgecolor=color, linewidth=lw, label=label)
 
 
-def kick_header_legend(fig, ax, handles=None, labels=None, **kw):
-    """Park the legend in the top-right of the HEADER band (to the right of the centred title/subtitle),
-    freeing the whole plot area so data reaching the axes edges (end-of-axis spikes) is never covered —
-    the default placement for non-pitch line/area charts. Call AFTER kick_title(..., pitch=False). Extra
-    kwargs (handlelength, handleheight, ncol, ...) pass through to ax.legend."""
-    fig.canvas.draw()
-    pos = ax.get_position()
-    if handles is None:
-        handles, labels = ax.get_legend_handles_labels()
-    if labels is None:
-        labels = [h.get_label() for h in handles]        # read labels off the handles (e.g. kick_swatch)
-    opts = dict(loc="center right", bbox_to_anchor=(pos.x1, (pos.y1 + 1.0) / 2),
-                bbox_transform=fig.transFigure,
-                borderpad=0.0,        # trim inner padding; the shift below nails the exact right edge
-                labelspacing=0.85)    # a touch more air between rows
-    opts.update(kw)
-    leg = ax.legend(handles, labels, **opts)
-    fig.canvas.draw()                    # pin the legend's ACTUAL right edge to the axes-right (longest label)
-    r = leg.get_window_extent().transformed(fig.transFigure.inverted()).x1
-    leg.set_bbox_to_anchor((2 * pos.x1 - r, (pos.y1 + 1.0) / 2), transform=fig.transFigure)
-    return leg
-
-
 def kick_inside_legend(ax, handles=None, labels=None, loc="best", **kw):
     """Legend placed INSIDE the plot — for 3+ series, where the header band (~2 rows) would overflow.
     Sits in the emptiest corner (loc="best") on a subtle semi-transparent figure-tone panel (no border)
@@ -604,10 +583,11 @@ def kick_inside_legend(ax, handles=None, labels=None, loc="best", **kw):
 
 
 def kick_flat_legend(fig, handles, labels=None, loc="bottom", ncol=None, fontsize=13, y=None):
-    """FLAT (single-row) shared legend — the house DEFAULT placement for a multi-series or small-multiple
-    chart. `loc="bottom"` (default) centres it UNDERNEATH the plot with its lower edge on the house margin
-    (reserve the room with `kick_grid_header(legend_band=…)` for a non-pitch grid, or `kick_grid(legend_band=…)`
-    for a pitch grid). Override with `loc="top-left"`/`"upper right"`/any Matplotlib loc if the user prefers.
+    """FLAT (single-row) legend SHARED across a grid / small-multiple chart, where repeating an inside
+    legend in every panel would be noise (a single chart's legend sits inside — KICK_LAYOUT["legend"]).
+    `loc="bottom"` (default) centres it UNDERNEATH the plot with its lower edge on the house margin
+    (reserve the room with `kick_grid(legend_band=…)` for a pitch grid).
+    Override with `loc="top-left"`/`"upper right"`/any Matplotlib loc if the user prefers.
     `handles` are the legend handles (labels read off them if not given); it is laid out in ONE row (`ncol`
     defaults to the number of entries) so it never stacks tall enough to crowd panel titles."""
     if labels is None:
@@ -637,8 +617,10 @@ def kick_reserve_legend(ax, leg, pad=0.05, min_target=0.30, dmax=None):
     within the legend's OWN x-span, not globally. So a legend sitting over the low tails of left-peaked
     curves (or short right-hand bars) lets the data stay TALL, and every panel self-adjusts by its own
     legend + local data — a 3-series and a 6-series do NOT get forced onto the same y-scale. No-op if the
-    legend already clears. `dmax` is a fallback if nothing is found under the legend. Call after the final
-    layout, with the legend at loc='upper right'/'upper left'/'upper center'. Returns the new y-top."""
+    legend already clears. `dmax` is a fallback if nothing is found under the legend. Ordering: on a single
+    chart call it BEFORE kick_title (so the header solves margins against the final ticks); in a
+    kick_grid_header grid call it AFTER the header (it only stretches panel y-limits, which the solved
+    margins don't depend on). Legend at loc='upper right'/'upper left'/'upper center'. Returns the new y-top."""
     fig = ax.figure; fig.canvas.draw()
     axinv = ax.transAxes.inverted(); datinv = ax.transData.inverted()
     lb = leg.get_window_extent()
@@ -682,18 +664,28 @@ def kick_caption(fig, ax, text, size=14):
     return fig.text(xmid, KICK_MARGIN_IN / Hf, text, ha="center", va="bottom", fontsize=size, color=W(0.55))
 
 
-def _badge_number(ax, x, y, txt, size_pt, color, zorder):
-    """A number centred on its INK at data point (x,y), sized `size_pt` POINTS (screen) — same optical
-    centring as the checker chip (TextPath outline + get_extents, with the '1' stem fix), so it sits dead
-    centre in the badge. Robust to the axes being resized/repositioned afterwards (e.g. by kick_title)."""
-    tp = TextPath((0, 0), txt, size=1.0, prop=fm.FontProperties(family=KICK_FONT, weight="bold"))
+def _ink_center(tp, txt):
+    """Optical centre of a TextPath's INK (get_extents bbox). "1" is special: its top flag drags the ink
+    centre left of the stem, so rasterise and centre on the full-height stem columns instead. Returns
+    (bbox, cx, cy) — shared by the checker-chip number and the badge number, so both centre identically."""
     bb = tp.get_extents()
-    cx = (bb.x0 + bb.x1) / 2; cy = (bb.y0 + bb.y1) / 2
-    if txt == "1":                                                   # its flag drags the ink centre off the stem
+    cx, cy = (bb.x0 + bb.x1) / 2, (bb.y0 + bb.y1) / 2
+    if txt == "1":
         xs1 = np.linspace(bb.x0, bb.x1, 48)
         gx1, gy1 = np.meshgrid(xs1, np.linspace(bb.y0, bb.y1, 48))
-        colc = tp.contains_points(np.column_stack([gx1.ravel(), gy1.ravel()])).reshape(48, 48).sum(0)
-        if colc.max(): stem = xs1[colc >= 0.9 * colc.max()]; cx = (stem.min() + stem.max()) / 2
+        col = tp.contains_points(np.column_stack([gx1.ravel(), gy1.ravel()])).reshape(48, 48).sum(0)
+        if col.max():
+            stem = xs1[col >= 0.9 * col.max()]
+            cx = (stem.min() + stem.max()) / 2
+    return bb, cx, cy
+
+
+def _badge_number(ax, x, y, txt, size_pt, color, zorder):
+    """A number centred on its INK at data point (x,y), sized `size_pt` POINTS (screen) — same optical
+    centring as the checker chip (shared _ink_center), so it sits dead centre in the badge. Robust to the
+    axes being resized/repositioned afterwards (e.g. by kick_title)."""
+    tp = TextPath((0, 0), txt, size=1.0, prop=fm.FontProperties(family=KICK_FONT, weight="bold"))
+    _, cx, cy = _ink_center(tp, txt)
     tr = (mtransforms.Affine2D().translate(-cx, -cy).scale(size_pt / 72.0)   # em → inches at size_pt
           + ax.figure.dpi_scale_trans                                       # inches → display px (size in points)
           + mtransforms.ScaledTranslation(x, y, ax.transData))             # → the data point (re-evaluated on draw)
@@ -851,19 +843,11 @@ def kick_checker(ax, x, y, r, color, number=None, name=None, num_size=None, name
         ax.add_patch(Wedge((x, y), r * 0.86, fail_angle - sweep / 2, fail_angle + sweep / 2,
                            width=r * 0.24, facecolor=rim, edgecolor="none", zorder=zorder + 0.25))
     if number is not None:
-        s = str(number)                                       # glyph OUTLINE centred on its TRUE bbox
-        tp = TextPath((0, 0), s, size=1.0,
+        s = str(number)                                       # glyph OUTLINE centred on its TRUE ink (shared
+        tp = TextPath((0, 0), s, size=1.0,                    #   _ink_center — same centring as the badges)
                       prop=fm.FontProperties(family=KICK_FONT, weight="bold"))
-        bb = tp.get_extents()                                 # get_extents ignores CLOSEPOLY (0,0) placeholder
-        cx = (bb.x0 + bb.x1) / 2; cy = (bb.y0 + bb.y1) / 2    # verts that skewed raw-vertex x-centring
+        bb, cx, cy = _ink_center(tp, s)
         gh, gw = bb.height, bb.width
-        if s == "1":                                          # "1" is special: its top flag drags the ink centre
-            xs1 = np.linspace(bb.x0, bb.x1, 48)               # left of the STEM. Rasterise + centre on the
-            gx1, gy1 = np.meshgrid(xs1, np.linspace(bb.y0, bb.y1, 48))   # full-height stem columns, not the flag
-            col = tp.contains_points(np.column_stack([gx1.ravel(), gy1.ravel()])).reshape(48, 48).sum(0)
-            if col.max():
-                stem = xs1[col >= 0.9 * col.max()]
-                cx = (stem.min() + stem.max()) / 2
         target_h = num_size or r * (0.82 if len(s) < 2 else 0.62)   # 2-digit smaller so it fits the SAME chip
         scale = target_h / gh
         if gw * scale > r * 1.4:                              # keep a wide number inside the chip
@@ -974,37 +958,38 @@ def kick_grid(nrows, ncols, vertical=False, line_zorder=2, pad=2, width=13.0,
             x_lo, x_hi, y_lo, y_hi = bounds                # touchline bounds in DRAWN coords
             ax.add_patch(Rectangle((x_lo, y_lo), x_hi - x_lo, y_hi - y_lo,
                                    facecolor=KICK["panel"], edgecolor="none", zorder=0.5))
-            ax._kick_bounds = bounds; ax._kick_panel = panel_label / H
+            ax._kick_bounds = bounds
             ax._kick_data0 = (len(ax.lines), len(ax.collections))   # see kick_clip
-            ax._kick_above = (m_in if r == 0 else row_gap) / H   # gap ABOVE the label band (header vs row-gap)
             axes[r, c] = ax
     fig._kick_header_frac = header / H
     fig._kick_grid_cbar_pos = cbar_pos if cbar else None
     return pitch, fig, axes
 
 
-def kick_panel_label(ax, label, size=16, weight="normal"):
-    """Small label above a grid panel, **vertically centred in the whole gap between the panel's pitch and
-    what sits above it** (the header for the top row, the row-gap for lower rows) — NOT just in its own
-    label band, so it never crowds the pitch top. Regular weight by default: bold is reserved for the one
-    overall grid title (kick_grid_title), so panel labels stay subordinate to it."""
+def kick_panel_label(ax, label, size=16, weight="normal", pad_pt=None):
+    """Small label above a grid panel, its baseline a fixed `panel_title_pad_pt` POINTS above the panel's
+    touchline — the SAME gap a non-pitch panel title gets from `ax.set_title(pad=…)`, so pitch grids and
+    subplot grids share one panel-title spacing (golden rule). Centring it in the leftover band (the old
+    behaviour) floated it ~0.4" off the pitch, and unevenly between rows. Regular weight by default: bold
+    is reserved for the one overall grid title (kick_grid_title), so panel labels stay subordinate to it."""
     fig = ax.figure; fig.canvas.draw()
+    pad = KICK_LAYOUT["panel_title_pad_pt"] if pad_pt is None else pad_pt
     x_lo, x_hi, y_lo, y_hi = ax._kick_bounds
     figc = fig.transFigure.inverted().transform(       # all 4 corners -> true visual top (y-axis may invert)
         ax.transData.transform([(x_lo, y_lo), (x_lo, y_hi), (x_hi, y_lo), (x_hi, y_hi)]))
     top, xmid = figc[:, 1].max(), figc[:, 0].mean()
-    above = getattr(ax, "_kick_above", KICK_MARGIN_IN / fig.get_size_inches()[1])
-    gap = ax._kick_panel + above                       # pitch-top → (subtitle / row above) span
-    fig.text(xmid, top + gap * 0.5, label, ha="center", va="center",
+    fig.text(xmid, top + pad / 72 / fig.get_size_inches()[1], label, ha="center", va="baseline",
              fontsize=size, fontweight=weight, color=W(0.90))
 
 
-def kick_tiered_title(ax, segments, pad=13, fontsize=None, weight="normal", sep=5, zorder=6):
+def kick_tiered_title(ax, segments, pad=None, fontsize=None, weight="normal", sep=5, zorder=6):
     """A per-panel title split into brightness TIERS on ONE centred line via offsetbox — e.g. a DIM jersey
     number + a BRIGHT name + a DIM role, so the eye lands on the name and the number/role stay subordinate
     (same hierarchy idea as _two_tone_label, but as a centred panel title). `segments` is a list of
-    (text, alpha). Sits `pad` points above the axes top, matching the spacing of ax.set_title(pad=)."""
+    (text, alpha). Sits `panel_title_pad_pt` points above the axes top (the one house panel-title gap,
+    matching ax.set_title(pad=…) and kick_panel_label)."""
     from matplotlib.offsetbox import TextArea, HPacker, AnnotationBbox
+    pad = KICK_LAYOUT["panel_title_pad_pt"] if pad is None else pad
     fs = fontsize if fontsize is not None else plt.rcParams["axes.titlesize"]
     tas = [TextArea(t, textprops=dict(color=W(a), fontsize=fs, fontweight=weight)) for t, a in segments]
     box = HPacker(children=tas, align="baseline", pad=0, sep=sep)
@@ -1112,13 +1097,14 @@ def kick_hide_origin_zero(ax, axis="y", fmt=None):
 
 
 def kick_grid_header(fig, axes, title, subtitle=None, xlabel=None, ylabel=None,
-                     size=20, sub_size=18, hspace=0.66, wspace=0.16, panel_pad=13,
+                     size=20, sub_size=18, hspace=0.66, wspace=0.16, panel_pad=None,
                      logo=True, logo_alpha=LOGO_ALPHA, logo_cap=0.26, margin_in=KICK_MARGIN_IN):
     """GOLDEN-RULE header + margins for a NON-PITCH subplot grid (plt.subplots). The single solved path so a
     grid can't drift: it sets subplots_adjust so every outer edge sits `margin_in` from the nearest ink
     (leftmost tick/label, lowest x-label, axes-right, header/logo top), draws the centred title+subtitle and
-    the top-left icon, and — when every panel shares the metric — ONE shared axis label per axis (drawn once,
-    not per-panel). Call AFTER plotting panel content + per-panel titles/legends."""
+    the top-right icon badge, and — when every panel shares the metric — ONE shared axis label per axis
+    (drawn once, not per-panel). Call AFTER plotting panel content + per-panel titles/legends."""
+    panel_pad = KICK_LAYOUT["panel_title_pad_pt"] if panel_pad is None else panel_pad
     Wf, Hf = fig.get_size_inches()
     ml, mv = margin_in / Wf, margin_in / Hf
     gap_h, gap_v = 0.12 / Wf, 0.12 / Hf                    # shared-label → tick-numbers gap
@@ -1195,7 +1181,10 @@ def kick_verify_margins(fig, target=KICK_MARGIN_IN, tol=0.02, label=""):
                 continue
             xs0.append(b.x0); xs1.append(b.x1); ys0.append(b.y0); ys1.append(b.y1)
     for t in fig.texts:
-        if not t.get_text().strip():
+        # skip invisible texts: _dim_units hides the original "Speed (m/s)" label after re-drawing it as
+        # a bright-quantity + dim-unit pair, and a hidden text's window extent degenerates to (0, 0) —
+        # measuring it would report L=0.000/B=0.000 on a perfectly-margined figure.
+        if not t.get_text().strip() or not t.get_visible():
             continue
         b = t.get_window_extent(r)
         xs0.append(b.x0); xs1.append(b.x1); ys0.append(b.y0); ys1.append(b.y1)
