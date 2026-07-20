@@ -18,5 +18,5 @@ joblib>=1.5
 networkx>=3.4
 tqdm>=4.67
 
-# Animations (football_animations only)
+# Animations (football_visuals/animations only)
 manim>=0.19

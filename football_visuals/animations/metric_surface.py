@@ -1,9 +1,25 @@
+"""A 2.5D bar surface over a pitch: one prism per matrix cell, height and colour driven by value.
+
+Useful for rendering any gridded metric (xT, pitch control, occupancy) as relief over the pitch.
+"""
 from manim import *
 import numpy as np
 
-# ====================================================
-# 1. HELPER CLASS: MetricSurface
-# ====================================================
+__all__ = ["MetricSurface"]
+
+
+def _pitch_extent(pitch):
+    """(width, height) of a pitch in manim units.
+
+    Prefers `StandardPitch.extent()`; the remaining branches keep foreign pitch objects working.
+    """
+    if hasattr(pitch, "extent"):
+        return pitch.extent()
+    if hasattr(pitch, "field_width"):
+        return pitch.field_width, pitch.field_height
+    return pitch.width, pitch.height
+
+
 class MetricSurface(VGroup):
     def __init__(
         self, 
@@ -32,22 +48,7 @@ class MetricSurface(VGroup):
     def _build_bars(self):
         rows, cols = self.matrix.shape
         
-        if hasattr(self.pitch, "field_width"):
-            p_width = self.pitch.field_width
-            p_height = self.pitch.field_height
-        elif hasattr(self.pitch, "dims") and hasattr(self.pitch, "pitch_scale"):
-            orientation = getattr(self.pitch, "orientation", "horizontal")
-            length_units = self.pitch.dims["length"] * self.pitch.pitch_scale
-            width_units = self.pitch.dims["width"] * self.pitch.pitch_scale
-            if orientation == "horizontal":
-                p_width = length_units
-                p_height = width_units
-            else:
-                p_width = width_units
-                p_height = length_units
-        else:
-            p_width = self.pitch.width
-            p_height = self.pitch.height
+        p_width, p_height = _pitch_extent(self.pitch)
 
         cell_w = p_width / cols
         cell_h = p_height / rows
