@@ -12,7 +12,7 @@ To install the Python dependencies used by the notebooks and animation modules, 
 
 ### 1.1 football_metrics
 
-This module contains implementations and experiments around football analytics metrics that aim to quantify tactical structure, player contribution, and contextual game value. Each metric is a self-contained notebook; shared code lives in [`data_loaders/`](./football_metrics/data_loaders) (Opta / Hawk-Eye event & tracking processors), [`visualization_helper/`](./football_metrics/visualization_helper) (plotting helpers), and [`model_utils/`](./football_metrics/model_utils) (reusable trained weights).
+This module contains implementations and experiments around football analytics metrics that aim to quantify tactical structure, player contribution, and contextual game value. Each metric is a self-contained notebook; shared code lives in [`data_loaders/`](./football_metrics/data_loaders) (Opta / Hawk-Eye event & tracking processors) and [`model_utils/`](./football_metrics/model_utils) (reusable trained weights). The house plotting style comes from [`football_visuals/`](./football_visuals).
 
 | Name | File Link | Data Input | Status |
 | :--- | :--- | :--- | :--- | 
@@ -29,9 +29,13 @@ This module contains implementations and experiments around football analytics m
 | On-Ball Value (OBV) | N/A | Event + Tracking | 🔴 Developing... |
 
 
-### 1.2 football_animations
+### 1.2 football_visuals
 
-This module contains [Manim](https://www.manim.community/)-based animation utilities: a pitch-drawing primitive ([`pitch_utils.py`](./football_animations/pitch_utils.py)), Voronoi pitch-control helpers ([`voronoi.py`](./football_animations/voronoi.py)), and a 3D metric surface ([`metric_surface.py`](./football_animations/metric_surface.py)). A minimal runnable scene is provided in [`example_scene.py`](./football_animations/example_scene.py).
+This module owns the project's **shared visual language**, in both still and moving form.
+
+[`kick_style.py`](./football_visuals/kick_style.py) is the house matplotlib design system — palette, type scale, pitch treatment and layout helpers — imported by every metric notebook so no figure drifts from the standard; [`style_guide.ipynb`](./football_visuals/style_guide.ipynb) renders one example of each chart family.
+
+[`animations/`](./football_visuals/animations) holds the [Manim](https://www.manim.community/) work: a pitch-drawing primitive ([`pitch.py`](./football_visuals/animations/pitch.py)), Voronoi pitch-control helpers ([`voronoi.py`](./football_visuals/animations/voronoi.py)), a 3D metric surface ([`metric_surface.py`](./football_visuals/animations/metric_surface.py)), and a minimal runnable scene ([`example_scene.py`](./football_visuals/animations/example_scene.py)). The tessellation maths lives in [`geometry.py`](./football_visuals/animations/geometry.py), which imports no Manim — so pitch-control geometry can be computed and tested without a rendering stack.
 
 | **Metric Surface** | **Voronoi Pitch Control** |
 | :---: | :---: |

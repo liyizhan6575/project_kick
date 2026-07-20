@@ -1,8 +1,19 @@
-from manim import *
-from pitch_utils import StandardPitch
+"""Minimal runnable scene: a static Voronoi frame over a standard pitch.
 
-# Render from the football_animations directory with:
-#   manim -pqh example_scene.py VoronoiFrameScene
+Render from the repository root with:
+    manim -pqh football_visuals/animations/example_scene.py VoronoiFrameScene
+"""
+import sys
+from pathlib import Path
+
+# manim loads a scene file as a top-level script, so the package-relative imports used elsewhere
+# in this package aren't available here. Put the repo root on the path and import by full name,
+# which keeps this file renderable from any working directory.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from manim import *
+
+from football_visuals.animations.pitch import StandardPitch
 
 # Synthetic player positions in Wyscout coordinates (0-100 on both axes).
 # Attack plays right-to-left in a 4-3-3; defense holds a 4-4-2 block.
