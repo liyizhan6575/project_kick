@@ -38,48 +38,31 @@ __all__ = [
     "Rectangle", "TextPath", "VerticalPitch", "Wedge", "to_rgb", "to_rgba",
 ]
 
-# ── palette ──────────────────────────────────────────────────────────────────
-KICK = {
-    "figure":     "#0E1116",   # page / figure face
-    "panel":      "#161A20",   # pitch & axes face (touchline interior)
-    "ink":        "#F2F4F7",
-    "ink_soft":   "#AEB6C0",
-    "muted":      "#6B7480",
-    "grid":       "#232833",
-    "pitch_line": "#46505E",
-    # ── TEAM COLOURS: a swappable DEFAULT, NOT part of the hard-locked golden rule (people may prefer
-    #    others). Home is orange, away is white — white/orange reads best for dots and is grayscale-safe.
-    "home":       "#DB6A12",   # orange
-    "away":       "#ECEEF1",   # white (a light neutral; the checker bevel adapts for it — see _bevel)
-    "danger":     "#E5484D",   # reserved status red (was the old home) — loss / risk, never a team
-    "accent":     "#F2C13C",   # single-highlight (e.g. passnet hub) — bright gold, pops against orange
-    "green":      "#1F9E5A",
-    "teal":       "#0EA5A0",   # categorical group-3
-    "purple":     "#7E5CE0",   # categorical group-4
-    "ball":       "#F2E23A",   # hi-vis yellow — distinct from orange home AND white away (was neutral white)
-}
-# sequential (magnitude): threat / xT / activity. Its DARK end IS the pitch tone (#161A20) so low values
-# melt into the pitch and magnitude GLOWS out of it (cool ice-white → white-hot core). Swappable default.
-KICK_SEQ = LinearSegmentedColormap.from_list(
-    "kick_ice", ["#161A20", "#26323E", "#5A7488", "#AEC4D4", "#FFFFFF"])
-# warm sequential ramp for DISCRETE marks that must stay legible on the dark pitch (passing-network node
-# xT, any per-mark magnitude): dark ember → home orange → gold. Counterpart to KICK_SEQ — the ice ramp's
-# dark end is the PITCH tone so it melts into a continuous SURFACE, which would make a low-value discrete
-# node vanish (and its white top would collide with the away-team white); this stays warm and visible.
-KICK_SEQ_WARM = LinearSegmentedColormap.from_list(
-    "kick_warm", ["#6B3D10", KICK["home"], KICK["accent"]])
-KICK_DIV = LinearSegmentedColormap.from_list("kick_div", [KICK["away"], KICK["panel"], KICK["home"]])
-KICK_STATUS = {"gain": KICK["green"], "noise": KICK["muted"], "loss": KICK["danger"]}
-# categorical grouping order — assign, never cycle. Teams lead (orange/white); teal/purple are extra groups.
-KICK_CAT = [KICK["home"], KICK["away"], KICK["teal"], KICK["purple"]]
+# ── palette, ramps, layout manifest ──────────────────────────────────────────
+# The VALUES live in kick_tokens, a module that imports NOTHING — so the manim scenes in animations/
+# (and any future non-matplotlib renderer) can read the same palette without dragging matplotlib and
+# mplsoccer in behind it. Everything imported here is re-exported through __all__, so a notebook's
+# `from kick_style import *` is unchanged. Edit the numbers there, not here.
+# Only what THIS module uses is pulled in — the extra renderer-agnostic helpers (kick_ramp, W_pair,
+# hex_to_rgb, …) stay in kick_tokens, so a star-import here injects no new names into a notebook.
+try:                                                   # normal: `football_visuals.kick_style`
+    from .kick_tokens import (
+        KICK, KICK_CAT, KICK_STATUS, W, KICK_FONT_STACK, KICK_LAYOUT,
+        KICK_SEQ_STOPS, KICK_SEQ_WARM_STOPS, KICK_DIV_STOPS,
+        KICK_MARGIN_IN, LOGO_ALPHA, LOGO_SCALE, NODE_ICON_R, NODE_ICON_EDGE,
+    )
+except ImportError:                                    # loaded as a top-level module (dir on sys.path)
+    from kick_tokens import (
+        KICK, KICK_CAT, KICK_STATUS, W, KICK_FONT_STACK, KICK_LAYOUT,
+        KICK_SEQ_STOPS, KICK_SEQ_WARM_STOPS, KICK_DIV_STOPS,
+        KICK_MARGIN_IN, LOGO_ALPHA, LOGO_SCALE, NODE_ICON_R, NODE_ICON_EDGE,
+    )
 
-def W(a): return "#FFFFFF%02X" % round(a * 255)          # white text at opacity a
-
-KICK_MARGIN_IN = 0.36    # house outer inset (inches): image edge → pitch touchline / label / logo, everywhere
-LOGO_ALPHA = 0.55        # brand-mark opacity, hard-locked (subtler than the data)
-LOGO_SCALE = 0.70        # brand-mark height as a fraction of the header block (a small top-right badge)
-NODE_ICON_R = 1.05       # node-attached event icon radius (pitch-data units) — FIXED, the same on every node
-NODE_ICON_EDGE = 0.62    # its inner edge sits at this fraction of a node's radius (the centre-colour boundary)
+# The Colormap OBJECTS are built here because building one needs matplotlib; their stops are the
+# shared truth in kick_tokens, and `kick_ramp(stops, t)` samples the identical ramp without it.
+KICK_SEQ = LinearSegmentedColormap.from_list("kick_ice", KICK_SEQ_STOPS)
+KICK_SEQ_WARM = LinearSegmentedColormap.from_list("kick_warm", KICK_SEQ_WARM_STOPS)
+KICK_DIV = LinearSegmentedColormap.from_list("kick_div", KICK_DIV_STOPS)
 
 
 def _load_logo(path=None, icon_only=True):
@@ -129,7 +112,9 @@ def _register_fonts(substr):
                     pass
     return found
 _HAS_CHAKRA = _register_fonts("chakrapetch")
-KICK_FONT = (["Chakra Petch", "Inter", "DejaVu Sans"] if _HAS_CHAKRA else ["Inter", "DejaVu Sans"])
+# The stack's PREFERENCE order is a token; which of it resolves is a property of this machine, so the
+# concrete list is decided here — drop the display face when it isn't installed.
+KICK_FONT = list(KICK_FONT_STACK) if _HAS_CHAKRA else list(KICK_FONT_STACK[1:])
 
 
 def apply_kick_style():
@@ -157,33 +142,6 @@ def apply_kick_style():
         pass
 
 apply_kick_style()
-
-
-# ── GOLDEN RULE — hard-locked layout manifest (every chart obeys; no chart re-derives these) ──
-# Enforced through ONE header path per chart family (kick_title · kick_grid_title · kick_grid_header) and
-# checked by kick_verify_margins. Sizes/colours also live in apply_kick_style rcParams (kept in sync here).
-KICK_LAYOUT = {
-    "width_in":       13.0,        # canvas width (portrait pitch matched to 13" so type is pixel-identical)
-    "margin_in":      KICK_MARGIN_IN,   # 0.36" uniform outer inset, every edge → nearest ink, everywhere
-    "logo_alpha":     LOGO_ALPHA,       # 0.55 brand-mark opacity (less prominent)
-    "logo_scale":     LOGO_SCALE,       # 0.70 of the header block — a small corner badge
-    "logo_pos":       "top-right",      # top & right edges on the margin (frees the top-left; legends go inside)
-    "logo":           "icon-only",      # the KK mark, not the full wordmark
-    "header_align":   "center",         # title + subtitle centred over the plot area
-    "legend":         "inside",         # ALL legends sit inside the plot (no header legend)
-    "title_pt":       20, "title_weight": "bold", "title_opacity": 1.00,
-    "sub_pt":         18, "sub_weight":  "normal", "sub_opacity":  0.60,
-    "axis_label_pt":  14, "axis_label_opacity": 0.75,
-    "axis_unit_opacity": 0.40,     # a trailing "(m/s)" recedes: the eye reads the quantity, then the unit
-    "panel_title_pad_pt": 13,      # panel title ↔ its panel: ONE fixed gap, for subplot grids
-    #   (ax.set_title(pad=…)) AND pitch grids (kick_panel_label) — never centred in leftover space
-    "bar_label_pt":   5,           # value label ↔ bar end: a typographic gap, so it holds at any data range
-    "bar_label_headroom": 0.10,    # …and the value axis grows 10% so the label never touches the plot edge
-    "tick_pt":        12, "tick_opacity": 0.45,
-    # node-attached event icons (subs/goals/assists/…): FIXED size, same on every node, placed TOP-RIGHT
-    # with the inner edge on the centre-colour boundary so they never cover the jersey number.
-    "node_icon_r":    NODE_ICON_R, "node_icon_edge": NODE_ICON_EDGE, "node_icon_pos": "top-right",
-}
 
 
 def _draw_logo(fig, anchor_x, header_top, header_h, logo, logo_alpha, logo_cap,
