@@ -7,13 +7,22 @@ Expected dataframe columns: `frame`, `x`, `y` (Wyscout 0-100), `team`, `player`.
 """
 from manim import *
 
-__all__ = ["VoronoiManager"]
+from .tokens import KICK, W_pair, LINE_WIDTH
+
+__all__ = ["VoronoiManager", "ATTACK_DEFAULT", "DEFENSE_DEFAULT", "BALL_COLOR", "CELL_STROKE"]
 
 # ── shared visual constants: one place to retune the look of every method below ──
+# Team colours are the house DEFAULT (home orange / away white), not a hard rule — pass your own.
+ATTACK_DEFAULT = KICK["home"]
+DEFENSE_DEFAULT = KICK["away"]
+# Hi-vis yellow, distinct from BOTH sides by hue and half the player diameter so it is distinct by
+# size too. It used to be white, which was invisible against the away team and the cell strokes.
+BALL_COLOR = KICK["ball"]
+CELL_STROKE = W_pair(0.35)          # (colour, opacity) — manim ignores an 8-digit hex, so keep them split
+
 PLAYER_RADIUS = 0.1
-PLAYER_STROKE_WIDTH = 2
-BALL_RADIUS = 0.07
-CELL_STROKE_WIDTH = 1
+BALL_RADIUS = PLAYER_RADIUS / 2     # half the player diameter (house rule: the ball reads by size too)
+CELL_STROKE_WIDTH = LINE_WIDTH * 0.5
 CELL_ALPHA = 0.28
 
 Z_CELLS, Z_PLAYERS, Z_BALL = -1, 10, 20
@@ -22,7 +31,7 @@ PLAYER_TEAMS = ("attack", "defense")
 
 
 class VoronoiManager:
-    def __init__(self, scene, pitch, attack_color=ORANGE, defense_color=BLUE_E):
+    def __init__(self, scene, pitch, attack_color=ATTACK_DEFAULT, defense_color=DEFENSE_DEFAULT):
         self.scene = scene
         self.pitch = pitch
         self.attack_color = attack_color
@@ -45,16 +54,19 @@ class VoronoiManager:
             Polygon(
                 *cell,
                 fill_color=color, fill_opacity=self.alpha,
-                stroke_width=CELL_STROKE_WIDTH, stroke_color=WHITE,
+                stroke_width=CELL_STROKE_WIDTH,
+                stroke_color=CELL_STROKE[0], stroke_opacity=CELL_STROKE[1],
             ).set_z_index(Z_CELLS)
             for cell, color in zip(cells, colors) if len(cell) >= 3
         ])
 
     def _player_dot(self, pos, color):
+        # No outline: the house rule is that a plain position dot is PURE colour (the beveled
+        # kick_checker keeps its rim — that is the chip design, not a dot). The old white stroke
+        # also erased itself against the white away team.
         return Dot(
             self.pitch.wyscout_to_manim(*pos),
-            color=color, radius=PLAYER_RADIUS,
-            stroke_width=PLAYER_STROKE_WIDTH, stroke_color=WHITE,
+            color=color, radius=PLAYER_RADIUS, stroke_width=0,
         ).set_z_index(Z_PLAYERS)
 
     def get_frame_data(self, df, frame_id):
@@ -159,7 +171,7 @@ class VoronoiManager:
             if ball_pos:
                 b_pos = self.pitch.wyscout_to_manim(*ball_pos)
                 if self.ball is None:
-                    self.ball = Dot(b_pos, color=WHITE, radius=BALL_RADIUS).set_z_index(Z_BALL)
+                    self.ball = Dot(b_pos, color=BALL_COLOR, radius=BALL_RADIUS).set_z_index(Z_BALL)
                     self.scene.add(self.ball)
                 else:
                     self.ball.move_to(b_pos)

@@ -5,6 +5,8 @@ Useful for rendering any gridded metric (xT, pitch control, occupancy) as relief
 from manim import *
 import numpy as np
 
+from .tokens import KICK, seq, KICK_SEQ_STOPS, pt_to_px
+
 __all__ = ["MetricSurface"]
 
 
@@ -21,33 +23,59 @@ def _pitch_extent(pitch):
 
 
 class MetricSurface(VGroup):
+    """A gridded metric as relief over the pitch — one prism per cell.
+
+    House colouring is the ICE ramp: its dark end IS the panel tone, so a zero cell melts into the
+    pitch and magnitude glows out of it. `ramp=` takes any `kick_tokens` stop list.
+
+    `normalize` decides what a bar's height and colour MEAN, and the default matters:
+
+    * ``"zero"`` (default) — scale by the maximum alone, so height is proportional to value and an
+      empty cell is genuinely flat. Right for every magnitude field the repo has (xT, threat,
+      occupancy, pitch control): they are non-negative with a meaningful zero.
+    * ``"minmax"`` — the old behaviour, subtracting the minimum. It rescales the FLOOR to zero,
+      which for a magnitude field silently promotes the quietest cell on the pitch to "no value at
+      all" and lifts everything else off a false baseline — a whole pitch of blue bars where the
+      data says nothing is happening. Keep it only for a signed or offset field where the minimum
+      really is the reference.
+    """
+
     def __init__(
-        self, 
-        pitch, 
-        matrix, 
-        max_height=3.5, 
-        min_color=ManimColor("#0077B6"), 
-        max_color=ManimColor("#00FFFF"), 
-        stroke_color=BLACK,
-        stroke_width=0.1, 
+        self,
+        pitch,
+        matrix,
+        max_height=3.5,
+        ramp=None,
+        normalize="zero",
+        stroke_color=KICK["figure"],
+        stroke_width=pt_to_px(0.1),
         fill_opacity=0.9,
         **kwargs
     ):
         super().__init__(**kwargs)
         self.pitch = pitch
-        self.matrix = np.array(matrix)
+        self.matrix = np.array(matrix, dtype=float)
         self.max_height = max_height
-        self.min_color = min_color
-        self.max_color = max_color
+        self.ramp = ramp or KICK_SEQ_STOPS
+        self.normalize = normalize
         self.stroke_color = stroke_color
         self.stroke_width = stroke_width
         self.fill_opacity = fill_opacity
-        
+
         self._build_bars()
+
+    def _normalized(self):
+        """The matrix mapped to [0,1] under the chosen convention."""
+        mat_max = float(np.max(self.matrix))
+        if self.normalize == "minmax":
+            mat_min = float(np.min(self.matrix))
+            span = mat_max - mat_min
+            return (self.matrix - mat_min) / span if span > 0 else np.zeros_like(self.matrix)
+        return self.matrix / mat_max if mat_max > 0 else np.zeros_like(self.matrix)
 
     def _build_bars(self):
         rows, cols = self.matrix.shape
-        
+
         p_width, p_height = _pitch_extent(self.pitch)
 
         cell_w = p_width / cols
@@ -55,22 +83,18 @@ class MetricSurface(VGroup):
         # Anchor bars to wherever the pitch actually sits, not the scene origin
         pitch_center = self.pitch.get_center()
 
-        # Normalize matrix
-        mat_max = np.max(self.matrix)
-        mat_min = np.min(self.matrix)
-        norm_matrix = (self.matrix - mat_min) / (mat_max - mat_min) if mat_max > mat_min else np.zeros_like(self.matrix)
+        norm_matrix = self._normalized()
 
         for r in range(rows):
             for c in range(cols):
-                val = self.matrix[r, c]
-                norm_val = norm_matrix[r, c]
-                
+                norm_val = float(norm_matrix[r, c])
+
                 h = (norm_val * self.max_height) + 0.01
-                bar_color = interpolate_color(self.min_color, self.max_color, norm_val)
+                bar_color = ManimColor(seq(norm_val, self.ramp))
 
                 bar = Prism(dimensions=[cell_w, cell_h, h])
                 bar.set_fill(bar_color, opacity=self.fill_opacity)
-                
+
                 if self.stroke_width > 0:
                     bar.set_stroke(color=self.stroke_color, width=self.stroke_width)
                 else:
@@ -85,15 +109,19 @@ class MetricSurface(VGroup):
                 bar.move_to(pitch_center + np.array([x, y, z]))
                 self.add(bar)
 
-    def get_growth_animation(self, run_time=2.5, lag_ratio=0.0, direction="bottom_up"):
-        """
-        Returns the LaggedStart animation for growing the bars.
-        
+    def get_growth_animation(self, run_time=2.5, lag_ratio=None, direction="bottom_up"):
+        """Grow the bars out of the pitch, as a sweep across it.
+
         Args:
-            run_time (float): Total duration of the animation.
-            lag_ratio (float): 0.0 for simultaneous, >0.0 for wave effect.
-            direction (str): 'bottom_up' (near to far) or 'top_down' (far to near).
+            run_time: total duration.
+            lag_ratio: gap between successive bars. ``None`` (default) spreads the sweep over the
+                whole run — the old default of 0.0 started every bar simultaneously, which made the
+                `direction` sort below a no-op and the sweep invisible. Pass 0.0 explicitly for a
+                deliberate all-at-once rise.
+            direction: 'bottom_up' (near to far) or 'top_down' (far to near).
         """
+        if lag_ratio is None:
+            lag_ratio = min(0.02, 1.5 / max(1, len(self)))
         # Sort based on Y position (screen depth)
         if direction == "bottom_up":
             # Sort by Y ascending (Screen Bottom -> Top)
