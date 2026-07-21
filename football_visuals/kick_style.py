@@ -12,6 +12,7 @@ import matplotlib.image as mpimg
 import matplotlib.patheffects as pe
 import matplotlib.font_manager as fm
 import matplotlib.transforms as mtransforms
+from matplotlib.collections import LineCollection, PolyCollection
 from matplotlib.colors import LinearSegmentedColormap, to_rgb, to_rgba
 from matplotlib.patches import Rectangle, Circle, Wedge, PathPatch, Patch
 from matplotlib.textpath import TextPath
@@ -30,7 +31,7 @@ __all__ = [
     "kick_contour", "kick_flat_legend", "kick_grid", "kick_grid_cbar", "kick_grid_header",
     "kick_grid_title", "kick_heatmap", "kick_hide_origin_zero",
     "kick_inside_legend", "kick_legend", "kick_node_icon", "kick_panel_label", "kick_pitch",
-    "kick_reserve_legend", "kick_smart_labels", "kick_swatch", "kick_tiered_title",
+    "kick_reserve_legend", "kick_smart_labels", "kick_swatch", "kick_taper_arrows", "kick_tiered_title",
     "kick_bar_labels", "kick_clip", "kick_tilt_big_ticks", "kick_title", "kick_verify_margins",
     # matplotlib / mplsoccer names the notebooks build their figures with
     "Circle", "FuncFormatter", "LinearSegmentedColormap", "Patch", "PathPatch", "Pitch",
@@ -474,6 +475,24 @@ def _touchlines(pitch, vertical, xlim, ylim, pad):
     return (min(xlim) + pad_x, max(xlim) - pad_x, min(ylim) + pad_y, max(ylim) - pad_y), pad_x, pad_y
 
 
+def _clip_half(pitch, ax, vertical, bounds, pad_x, pad_y):
+    """`half=True` still DRAWS the far half (mplsoccer 1.6.1): the touchlines run all the way back across
+    it, the centre circle is a whole ellipse, and the far penalty area is there too. The axis limits
+    normally hide them — but ANY pad exposes a sliver, so the halfway cut looks like it leaks (a bulge of
+    centre circle and two touchline stubs past the halfway line). Clip every pitch artist to the visible
+    half: EXACT at the cut, still padded on the three real touchline sides."""
+    if not getattr(pitch, "half", False):
+        return
+    x_lo, x_hi, y_lo, y_hi = bounds
+    if vertical:                       # attacking UP -> the halfway cut is the BOTTOM edge
+        box = Rectangle((x_lo - pad_x, y_lo), (x_hi - x_lo) + 2 * pad_x, (y_hi - y_lo) + pad_y)
+    else:                              # attacking RIGHT -> the halfway cut is the LEFT edge
+        box = Rectangle((x_lo, y_lo - pad_y), (x_hi - x_lo) + pad_x, (y_hi - y_lo) + 2 * pad_y)
+    box.set_transform(ax.transData)
+    for art in [*ax.lines, *ax.patches, *ax.collections]:
+        art.set_clip_path(box)
+
+
 def draw_kick_pitch(pitch_type="statsbomb", vertical=False, line_zorder=2, pad=2,
                     width=None, margin_in=KICK_MARGIN_IN, title_pt=20, sub_pt=18,
                     legend=False, leg_in=0.72, caption=False, cap_in=2 * KICK_MARGIN_IN + 0.22,
@@ -524,6 +543,7 @@ def draw_kick_pitch(pitch_type="statsbomb", vertical=False, line_zorder=2, pad=2
     fig = plt.figure(figsize=(width, H), facecolor=KICK["figure"])
     ax = fig.add_axes([h_margin, bot_margin, box_w, box_h]); ax.set_facecolor(KICK["figure"])
     pitch.draw(ax=ax)
+    _clip_half(pitch, ax, vertical, bounds, pad_x, pad_y)   # exact halfway cut when half=True
     x_lo, x_hi, y_lo, y_hi = bounds                       # touchline bounds in DRAWN coords
     ax.add_patch(Rectangle((x_lo, y_lo), x_hi - x_lo, y_hi - y_lo,
                            facecolor=KICK["panel"], edgecolor="none", zorder=0.5))
@@ -779,10 +799,15 @@ def kick_smart_labels(ax, xy, labels, eps=None, tight=4, accent=None,
 
 
 # ── magnitude-surface helpers: two options (grid heatmap / contour) ────────────
-def kick_heatmap(ax, x_edges, y_edges, z, cmap=KICK_SEQ, edge=False):
+def kick_heatmap(ax, x_edges, y_edges, z, cmap=KICK_SEQ, edge=False, norm=None):
     """Grid-cell heatmap (blocky zones) — default for threat / xT surfaces. Cells abut with no
-    separator (edge=False) so the surface reads clean; pass edge=True for thin figure-tone gridlines."""
-    return ax.pcolormesh(x_edges, y_edges, z, cmap=cmap, alpha=0.92, zorder=1,
+    separator (edge=False) so the surface reads clean; pass edge=True for thin figure-tone gridlines.
+
+    `norm` takes a matplotlib Normalize for value surfaces that are heavily SKEWED (xT, threat: ~0
+    over most of the pitch with a sharp peak at goal), where a linear ramp reads as flat dark. A
+    PowerNorm(gamma≈0.45) spreads the low-mid range so the gradient shows everywhere; the colourbar
+    renders the non-linear ticks, so it stays honest. Default None = plain linear scaling."""
+    return ax.pcolormesh(x_edges, y_edges, z, cmap=cmap, alpha=0.92, zorder=1, norm=norm,
                          edgecolors=(KICK["figure"] if edge else "face"),
                          linewidth=(0.6 if edge else 0))
 
@@ -955,6 +980,7 @@ def kick_grid(nrows, ncols, vertical=False, line_zorder=2, pad=2, width=13.0,
             px = side + c * (pitch_w + col_gap)
             ax = fig.add_axes([px / width, py / H, pitch_w / width, pitch_h / H])
             ax.set_facecolor(KICK["figure"]); pitch.draw(ax=ax)
+            _clip_half(pitch, ax, vertical, bounds, pad_x, pad_y)   # exact halfway cut when half=True
             x_lo, x_hi, y_lo, y_hi = bounds                # touchline bounds in DRAWN coords
             ax.add_patch(Rectangle((x_lo, y_lo), x_hi - x_lo, y_hi - y_lo,
                                    facecolor=KICK["panel"], edgecolor="none", zorder=0.5))
@@ -980,6 +1006,60 @@ def kick_panel_label(ax, label, size=16, weight="normal", pad_pt=None):
     top, xmid = figc[:, 1].max(), figc[:, 0].mean()
     fig.text(xmid, top + pad / 72 / fig.get_size_inches()[1], label, ha="center", va="baseline",
              fontsize=size, fontweight=weight, color=W(0.90))
+
+
+def kick_taper_arrows(pitch, ax, x_start, y_start, x_end, y_end, color, alpha=1.0, width=2.6,
+                      head_w=9.6, head_l=10.8, tail=0.10, fade=0.06, n=32, zorder=4):
+    """Action arrows that TAPER and FADE toward the tail — a *reverse needle*.
+
+    A quiver arrow is a constant-width bar: on a busy pitch the tails are as loud as the heads and a
+    tangle of them reads as noise with no direction. Here the shaft starts as a near-invisible hairline
+    where the action began and grows to full weight and full opacity at the head, so the eye is pulled
+    the way the ball went and overlapping tails stay quiet.
+
+    A drop-in for `pitch.arrows(xs, ys, xe, ye, ax=ax, ...)` — same PITCH coordinates (the vertical
+    swap is handled here), and the HEAD is a fixed size in POINTS (`head_w` x `head_l`) for every arrow
+    whatever its length, defaulting to exactly the head quiver draws at width=2.4 / headwidth=4 /
+    headlength=4.5. Pass `pitch=None` on a plain (non-pitch) axes. `alpha` is the opacity AT THE HEAD
+    (scalar, or one per arrow to carry magnitude); the tail reaches `fade` x that, and the tail's width
+    is `tail` x `width`. Geometry is solved in display space, so it is exact on any pitch aspect.
+    """
+    if pitch is not None:                               # pitch coords -> axes coords (VerticalPitch swaps)
+        x_start, y_start = pitch._reverse_if_vertical(np.asarray(x_start, float), np.asarray(y_start, float))
+        x_end, y_end = pitch._reverse_if_vertical(np.asarray(x_end, float), np.asarray(y_end, float))
+    fig = ax.figure
+    fig.canvas.draw()                                   # transData must be final before we measure
+    tr, inv = ax.transData, ax.transData.inverted()
+    A = tr.transform(np.column_stack([np.asarray(x_start, float), np.asarray(y_start, float)]))
+    B = tr.transform(np.column_stack([np.asarray(x_end, float), np.asarray(y_end, float)]))
+    m = len(A)
+    rgb = np.asarray([to_rgb(c) for c in ([color] * m if isinstance(color, str) else color)], float)
+    a_head = np.full(m, float(alpha)) if np.ndim(alpha) == 0 else np.asarray(alpha, float)
+
+    px = fig.dpi / 72.0                                 # points -> pixels
+    v = B - A
+    L = np.maximum(np.hypot(v[:, 0], v[:, 1]), 1e-9)
+    u = v / L[:, None]
+    perp = np.column_stack([-u[:, 1], u[:, 0]])
+    hl = np.minimum(head_l * px, 0.9 * L)[:, None]      # a short arrow keeps a proportional shaft
+    base = B - u * hl                                   # where the head meets the shaft
+    heads = np.stack([B, base + perp * (head_w * px / 2), base - perp * (head_w * px / 2)], axis=1)
+
+    t = np.linspace(0.0, 1.0, n + 1)
+    pts = A[:, None, :] + (base - A)[:, None, :] * t[None, :, None]
+    segs = np.concatenate([pts[:, :-1, :], pts[:, 1:, :]], axis=2).reshape(-1, 2, 2)
+    tm = (t[:-1] + t[1:]) / 2                           # each segment's position along the shaft
+    lw = np.tile(width * (tail + (1 - tail) * tm), m)
+    sa = (a_head[:, None] * (fade + (1 - fade) * tm[None, :])).ravel()
+    lc = LineCollection(inv.transform(segs.reshape(-1, 2)).reshape(-1, 2, 2),
+                        linewidths=lw, colors=np.column_stack([np.repeat(rgb, n, axis=0), sa]),
+                        capstyle="round", zorder=zorder)
+    pc = PolyCollection(inv.transform(heads.reshape(-1, 2)).reshape(m, 3, 2),
+                        facecolors=np.column_stack([rgb, a_head]), edgecolors="none",
+                        zorder=zorder + 0.01)
+    ax.add_collection(lc, autolim=False)
+    ax.add_collection(pc, autolim=False)
+    return lc, pc
 
 
 def kick_tiered_title(ax, segments, pad=None, fontsize=None, weight="normal", sep=5, zorder=6):
