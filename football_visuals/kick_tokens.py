@@ -1,8 +1,22 @@
-"""The house design VALUES — and nothing else.
+"""The house IDENTITY — the values that make a thing recognisably ours, in any medium.
 
 This module **imports nothing**. Not matplotlib, not manim, not numpy. That is its entire job and the
-one rule to keep: it is the single source of truth for the palette, the ramps, the type scale and the
-layout manifest, so *every* renderer can read the same numbers.
+one rule to keep: it is the single source of truth for the palette, the ramps and the typeface, so
+*every* renderer can read the same numbers.
+
+**Identity vs craft.** Only a small set of decisions is universal — what a colour MEANS, which
+typeface, how the mark is treated. Everything else (margins, type sizes, density, chrome, timing) is
+*craft*, and craft belongs to a FORMAT, because it answers "how is this actually looked at". The
+three formats have genuinely different answers:
+
+    notebook   13" canvas, read closely, zoomable      -> KICK_LAYOUT, below
+    card       square/16:9, thumbnail-first, mobile    -> its own law
+    motion     16:9 fixed, watched at a distance       -> its own law
+
+A notebook figure can carry twenty labelled points; a social card carries one idea; a video frame is
+read across a room and cannot be paused and zoomed. Forcing one layout law on all three would be
+tidiness at the cost of fitness. Sharing the palette across all three is what stops them drifting
+into four different-looking projects, which is exactly what happened before this module existed.
 
 Why it exists: the tokens used to live inside `kick_style.py`, which imports matplotlib and mplsoccer
 at module top. Anything that could not afford those imports — the manim scenes in `animations/`, a
@@ -43,6 +57,9 @@ KICK = {
     "teal":       "#0EA5A0",   # categorical group-3
     "purple":     "#7E5CE0",   # categorical group-4
     "ball":       "#F2E23A",   # hi-vis yellow — distinct from orange home AND white away (was neutral white)
+    # Text placed ON a light fill. NOT pure black: against a beveled chip, #000 flattens the highlight
+    # cap and kills the three-layer read the chip is built on. This is the darkest ink that doesn't.
+    "ink_on_light": "#2B2B2B",
 }
 
 # ── colour ramps, as STOPS (kick_style builds the Colormap objects from these) ──
@@ -85,6 +102,38 @@ def rgb_to_hex(rgb):
     return "#%02X%02X%02X" % tuple(max(0, min(255, round(c * 255))) for c in rgb[:3])
 
 
+def luminance(color):
+    """Perceived luminance (Rec. 601), 0=black … 1=white. Accepts a hex string OR an (r,g,b) in 0..1.
+
+    One definition, one place. This used to exist three times over with three different thresholds —
+    the palette cannot defend itself if every caller re-decides what "light" means."""
+    r, g, b = hex_to_rgb(color) if isinstance(color, str) else color[:3]
+    return 0.299 * r + 0.587 * g + 0.114 * b
+
+
+def is_light(color, thresh=0.70):
+    """True when `color` is light enough that dark ink belongs on top of it. The 0.70 default is the
+    house threshold for a filled mark (a chip, a bar, a node)."""
+    return luminance(color) >= thresh
+
+
+def shade(color, f):
+    """Scale toward black by factor `f` (0.5 = half as bright). Works on white, where lightening
+    cannot: a near-white base has no headroom left to lift."""
+    return tuple(c * f for c in (hex_to_rgb(color) if isinstance(color, str) else color[:3]))
+
+
+def lighten(color, f):
+    """Lift toward white by fraction `f` of the remaining headroom."""
+    rgb = hex_to_rgb(color) if isinstance(color, str) else color[:3]
+    return tuple(c + (1 - c) * f for c in rgb)
+
+
+def on_color(bg, thresh=0.70):
+    """The ink to put ON `bg` — dark on a light fill, white on a dark one."""
+    return KICK["ink_on_light"] if is_light(bg, thresh) else "#FFFFFF"
+
+
 def kick_ramp(stops, t):
     """Sample a stop list at `t` ∈ [0,1] by piecewise-linear RGB interpolation → '#RRGGBB'.
 
@@ -103,17 +152,24 @@ def kick_ramp(stops, t):
     return rgb_to_hex(tuple(a[k] + (b[k] - a[k]) * f for k in range(3)))
 
 
-# ── layout constants (inches / points — deliberately medium-independent) ─────
-KICK_MARGIN_IN = 0.36    # house outer inset (inches): image edge → pitch touchline / label / logo, everywhere
-LOGO_ALPHA = 0.55        # brand-mark opacity, hard-locked (subtler than the data)
-LOGO_SCALE = 0.70        # brand-mark height as a fraction of the header block (a small top-right badge)
-NODE_ICON_R = 1.05       # node-attached event icon radius (pitch-data units) — FIXED, the same on every node
-NODE_ICON_EDGE = 0.62    # its inner edge sits at this fraction of a node's radius (the centre-colour boundary)
-
-# ── typography ───────────────────────────────────────────────────────────────
+# ── typography (identity: the face, not its sizes — sizes are per-format craft) ──
 # The preference ORDER only. Which of these actually resolves depends on what is installed, so the
 # concrete font list stays in kick_style (it probes and registers Chakra Petch); this is the intent.
 KICK_FONT_STACK = ["Chakra Petch", "Inter", "DejaVu Sans"]
+
+# ── the brand mark's treatment (identity: how prominent the mark is, in any medium) ──
+LOGO_ALPHA = 0.55        # brand-mark opacity, hard-locked (subtler than the data)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+#  CRAFT — the NOTEBOOK format. Everything below answers "how is a 13-inch,
+#  closely-read, zoomable figure laid out". A social card and a video frame are
+#  read differently and get their own laws; they share the palette above, not this.
+# ═════════════════════════════════════════════════════════════════════════════
+KICK_MARGIN_IN = 0.36    # house outer inset (inches): image edge → pitch touchline / label / logo, everywhere
+LOGO_SCALE = 0.70        # brand-mark height as a fraction of the header block (a small top-right badge)
+NODE_ICON_R = 1.05       # node-attached event icon radius (pitch-data units) — FIXED, the same on every node
+NODE_ICON_EDGE = 0.62    # its inner edge sits at this fraction of a node's radius (the centre-colour boundary)
 
 
 # ── GOLDEN RULE — hard-locked layout manifest (every chart obeys; no chart re-derives these) ──
