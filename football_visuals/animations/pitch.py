@@ -11,6 +11,7 @@ import math
 import numpy as np
 
 from .geometry import rectangle, voronoi_cells
+from .tokens import KICK, LINE_WIDTH
 
 __all__ = ["StandardPitch"]
 
@@ -76,14 +77,25 @@ class StandardPitch(VGroup):
         return voronoi_cells(sites, self.boundary_polygon())
 
     # ── drawing ──────────────────────────────────────────────────────────────────────────────
-    def draw_base_pitch(self, stroke_color=WHITE, stroke_width=3):
-        """Add the standard lines and markings to this group, and return self."""
+    def draw_base_pitch(self, stroke_color=KICK["pitch_line"], stroke_width=LINE_WIDTH,
+                        fill_color=KICK["panel"]):
+        """Add the standard lines and markings to this group, and return self.
+
+        House defaults: `pitch_line` markings at the still figure's 1.2 pt (converted to pixels by
+        `tokens.LINE_WIDTH`) over a `panel`-toned interior — the same treatment `draw_kick_pitch`
+        gives a still pitch, where the lighter interior stops the field dissolving into the surround.
+        Pass `fill_color=None` for an unfilled pitch (e.g. over an existing surface)."""
         d = self.dims
         l, w = d["length"], d["width"]
         horizontal = self.orientation == "horizontal"
 
         # 1. Main boundary & halfway line
         pitch_w, pitch_h = self.extent()
+        # The touchline interior, behind everything — the still standard's lighter playing area.
+        if fill_color is not None:
+            interior = Rectangle(width=pitch_w, height=pitch_h, stroke_width=0,
+                                 fill_color=fill_color, fill_opacity=1.0).set_z_index(-100)
+            self.add(interior)
         boundary = Rectangle(
             width=pitch_w, height=pitch_h,
             stroke_color=stroke_color, stroke_width=stroke_width,

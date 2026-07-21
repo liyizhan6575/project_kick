@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from manim import *
 
 from football_visuals.animations.pitch import StandardPitch
+from football_visuals.animations.tokens import KICK, W_pair, LINE_WIDTH
 
 # Synthetic player positions in Wyscout coordinates (0-100 on both axes).
 # Attack plays right-to-left in a 4-3-3; defense holds a 4-4-2 block.
@@ -36,22 +37,23 @@ def build_voronoi_frame(pitch_scale=0.11):
     pitch = StandardPitch(pitch_scale).draw_base_pitch()
 
     positions = ATTACK_POSITIONS + DEFENSE_POSITIONS
-    colors = [ORANGE] * len(ATTACK_POSITIONS) + [BLUE_E] * len(DEFENSE_POSITIONS)
+    colors = [KICK["home"]] * len(ATTACK_POSITIONS) + [KICK["away"]] * len(DEFENSE_POSITIONS)
+    cell_stroke, cell_stroke_a = W_pair(0.35)
 
     cells = pitch.get_voronoi_cells(positions)
     polygons = VGroup(*[
         Polygon(
             *cell,
             fill_color=color, fill_opacity=0.28,
-            stroke_width=1, stroke_color=WHITE,
+            stroke_width=LINE_WIDTH * 0.5,
+            stroke_color=cell_stroke, stroke_opacity=cell_stroke_a,
         ).set_z_index(-1)
         for cell, color in zip(cells, colors) if len(cell) >= 3
     ])
     dots = VGroup(*[
         Dot(
             pitch.wyscout_to_manim(*pos),
-            color=color, radius=0.1,
-            stroke_width=2, stroke_color=WHITE,
+            color=color, radius=0.1, stroke_width=0,      # house rule: a plain dot is pure colour
         ).set_z_index(10)
         for pos, color in zip(positions, colors)
     ])
