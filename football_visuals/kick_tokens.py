@@ -46,7 +46,9 @@ KICK = {
     "ink_soft":   "#AEB6C0",
     "muted":      "#6B7480",
     "grid":       "#232833",
-    "pitch_line": "#46505E",
+    # Lifted from #46505E, which measured 2.14:1 against the panel — under the WCAG 3:1 floor for a
+    # graphical object. Same hue and saturation, raised in value until it clears: 3.04:1.
+    "pitch_line": "#5A6779",
     # ── TEAM COLOURS: a swappable DEFAULT, NOT part of the hard-locked golden rule (people may prefer
     #    others). Home is orange, away is white — white/orange reads best for dots and is grayscale-safe.
     "home":       "#DB6A12",   # orange
@@ -54,8 +56,13 @@ KICK = {
     "danger":     "#E5484D",   # reserved status red (was the old home) — loss / risk, never a team
     "accent":     "#F2C13C",   # single-highlight (e.g. passnet hub) — bright gold, pops against orange
     "green":      "#1F9E5A",
-    "teal":       "#0EA5A0",   # categorical group-3
-    "purple":     "#7E5CE0",   # categorical group-4
+    # ── KICK_CAT slots 3 and 4, re-spaced in LIGHTNESS. They used to sit at 8-bit greys 119 and 117,
+    #    two levels apart — indistinguishable in monochrome or to a deuteranopic reader, with home
+    #    (130) crowding them both. Only `away` (238) separated. Hue is unchanged; teal moves up and
+    #    purple down, giving greys 130 / 104 / 184 / 238 — a worst gap of 26 instead of 2. Purple
+    #    cannot go darker: 102 is the floor at which a mark still clears 3:1 on the panel.
+    "teal":       "#63DDD9",   # categorical group-3 (grey 184)
+    "purple":     "#6F52C4",   # categorical group-4 (grey 104; sat 0.58 vs the old 0.59)
     "ball":       "#F2E23A",   # hi-vis yellow — distinct from orange home AND white away (was neutral white)
     # Text placed ON a light fill. NOT pure black: against a beveled chip, #000 flattens the highlight
     # cap and kills the three-layer read the chip is built on. This is the darkest ink that doesn't.
