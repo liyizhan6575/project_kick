@@ -48,12 +48,14 @@ __all__ = [
 try:                                                   # normal: `football_visuals.kick_style`
     from .kick_tokens import (
         KICK, KICK_CAT, KICK_STATUS, W, KICK_FONT_STACK, KICK_LAYOUT,
+        luminance, is_light, shade, lighten, on_color,
         KICK_SEQ_STOPS, KICK_SEQ_WARM_STOPS, KICK_DIV_STOPS,
         KICK_MARGIN_IN, LOGO_ALPHA, LOGO_SCALE, NODE_ICON_R, NODE_ICON_EDGE,
     )
 except ImportError:                                    # loaded as a top-level module (dir on sys.path)
     from kick_tokens import (
         KICK, KICK_CAT, KICK_STATUS, W, KICK_FONT_STACK, KICK_LAYOUT,
+        luminance, is_light, shade, lighten, on_color,
         KICK_SEQ_STOPS, KICK_SEQ_WARM_STOPS, KICK_DIV_STOPS,
         KICK_MARGIN_IN, LOGO_ALPHA, LOGO_SCALE, NODE_ICON_R, NODE_ICON_EDGE,
     )
@@ -777,14 +779,11 @@ def kick_contour(ax, xs, ys, z, levels=12, cmap=KICK_SEQ, vmin=None, vmax=None):
 
 
 # ── node marks: the beveled "checker" chip (pass-network node) ──────────
-def _shade(hx, f):    # darken toward black
-    return tuple(c * f for c in to_rgb(hx))
-
-def _lighten(hx, f):  # lift toward white
-    return tuple(c + (1 - c) * f for c in to_rgb(hx))
-
-def _lum(c):          # perceived luminance of an (r,g,b) 0-1 tuple
-    return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+# The colour maths lives in kick_tokens (one definition of "light", not three) — these thin aliases
+# keep the call sites below reading as they did. `to_rgb` first so a named colour still works.
+def _shade(hx, f):    return shade(to_rgb(hx), f)      # darken toward black
+def _lighten(hx, f):  return lighten(to_rgb(hx), f)    # lift toward white
+def _lum(c):          return luminance(c)              # perceived luminance, Rec. 601
 
 def _bevel(color):
     """The chip's three layers — rim (shadow), main (body), highlight (cap) — with a visible bevel for ANY
@@ -797,7 +796,7 @@ def _bevel(color):
     return _shade(color, 0.5), base, hi                        # normal · rim · body · lifted cap
 
 def _num_col(color):  # white number, or dark on a light chip (keeps the bevel readable)
-    return "#2B2B2B" if _lum(to_rgb(color)) > 0.70 else "#FFFFFF"
+    return on_color(to_rgb(color))
 
 def kick_checker(ax, x, y, r, color, number=None, name=None, num_size=None, name_size=13,
                  name_gap=1.6, name_weight="normal", fail_angle=None, fail_ratio=0.0,
