@@ -14,3 +14,7 @@ __pycache__/
 *.pkl
 !football_metrics/model_utils/*.pkl
 !football_metrics/model_utils/*.npy
+# champion_model publishes ONLY the baked notebook — the pipeline modules, trained weights and the
+# deployment snapshot are private; anything copied in to re-bake stays untracked
+football_forecasts/champion_model/*
+!football_forecasts/champion_model/champion_prediction.ipynb

@@ -49,6 +49,18 @@ This module owns the project's **shared visual language**, in both still and mov
 
 This module will contain simulation and control: reinforcement learning (RL) environments that allow agents to learn football behaviors from reward signals and environment dynamics. An earlier Unity (ML-Agents) prototype has been retired; the environment is being rebuilt in **JAX** and will be published here when ready.
 
+### 1.4 football_forecasts
+
+This module contains **predictive** models. Where [`football_metrics`](./football_metrics) measures *what happened*, these forecast *what will happen*. Demos are published as **fully-baked notebooks** — every figure and number is the output of a real end-to-end run — while the underlying pipelines and trained weights power a live production deployment and stay private.
+
+The first demo is a pre-tournament **champion model**: from a group stage only, it builds opponent-adjusted attack/defence strengths (goals + xG + a learned threat model) and Monte-Carlos the real knockout bracket. It is validated on every World Cup + Euro in StatsBomb open data (the eventual champion landed in its top 3 every time) and was deployed as a live forecast on **World Cup 2026**, where its #1 pick won. The notebook is deliberately explicit about what a three-game sample can and cannot support.
+
+| Name | File Link | Data Input | Status |
+| :--- | :--- | :--- | :--- |
+| Tournament Champion (group stage → winner) | [`champion_prediction.ipynb`](./football_forecasts/champion_model/champion_prediction.ipynb) | Event | 🟢 Demo Available |
+| Final-Score Prediction | N/A | Event | 🔴 Developing... |
+| Next-Goal Momentum | N/A | Event | 🔴 Developing... |
+
 ## 2. Sources and attribution
 
 This project builds on a combination of **open datasets** and, in some cases, **data accessed under non-disclosure agreements (NDA)**. Only analyses and results that are permitted for public release are included in this repository.
