@@ -54,7 +54,11 @@ KICK = {
     "home":       "#DB6A12",   # orange
     "away":       "#ECEEF1",   # white (a light neutral; the checker bevel adapts for it — see _bevel)
     "danger":     "#E5484D",   # reserved status red (was the old home) — loss / risk, never a team
-    "accent":     "#F2C13C",   # single-highlight (e.g. passnet hub) — bright gold, pops against orange
+    # single-highlight (e.g. passnet hub). Deliberately #F2C13C, NOT the brand site's #fbbf24: this
+    # gold shares a canvas with home orange #DB6A12, and the desaturation is what keeps the two
+    # separable at small mark sizes. The website carries no orange, so it can afford the hotter swatch;
+    # here the constraint is separation-from-home, and that — not the exact hex — is the rule.
+    "accent":     "#F2C13C",
     "green":      "#1F9E5A",
     # ── KICK_CAT slots 3 and 4, re-spaced in LIGHTNESS. They used to sit at 8-bit greys 119 and 117,
     #    two levels apart — indistinguishable in monochrome or to a deuteranopic reader, with home
