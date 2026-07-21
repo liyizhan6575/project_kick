@@ -6,7 +6,7 @@
 
 The goal of this project is to explore how ideas from **data science, computer science, mathematics, and physics** can be used to better understand football.
 
-To install the Python dependencies used by the notebooks and animation modules, run `pip install -r requirements.txt`.
+To install the Python dependencies used by the notebooks and by [`football_visuals/`](./football_visuals) (the house plotting style and its Manim animations), run `pip install -r requirements.txt`.
 
 ## 1. Repository Structure
 
