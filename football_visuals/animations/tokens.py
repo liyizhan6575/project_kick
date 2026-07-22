@@ -35,7 +35,25 @@ __all__ = [
     "KICK", "KICK_CAT", "KICK_STATUS", "W_pair", "kick_ramp",
     "KICK_SEQ_STOPS", "KICK_SEQ_WARM_STOPS", "KICK_DIV_STOPS", "KICK_LAYOUT",
     "FRAME_W", "PX_PER_UNIT", "U_PER_CANVAS_IN", "pt_to_px", "MARGIN_U", "LINE_WIDTH", "seq",
+    "MEDALS", "FONT", "FONT_BOLD", "W",
 ]
+
+# ── the house display FACE for scenes (Chakra Petch, the still title face) ───
+# Pango resolves it by family name; kick_style registers it for matplotlib, fontconfig for manim.
+FONT = "Chakra Petch"
+FONT_BOLD = "Chakra Petch"      # same family, weight is a Text() argument
+
+
+def W(a):
+    """White at opacity `a`, as an #RRGGBBAA string (mirrors kick_tokens.W). manim's Text ignores the
+    alpha byte — pass fill_opacity separately, or use W_pair — but VMobject strokes/fills honour it."""
+    return "#FFFFFF%02X" % round(a * 255)
+
+
+# ── ranking MEDAL tones — top-3 vs the field, retoned to the house palette ───
+# Gold is the house accent (separable from home orange); silver/bronze keep the podium metaphor at
+# tones that read on the dark stage. The rest of the field is a muted grey.
+MEDALS = [KICK["accent"], "#CDD3DA", "#CF8A4B"]
 
 # ── the still canvas ↔ scene frame conversion ────────────────────────────────
 FRAME_W = 14.2222                       # manim's default frame width in scene units (16:9 at height 8)
