@@ -18,3 +18,9 @@ __pycache__/
 # deployment snapshot are private; anything copied in to re-bake stays untracked
 football_forecasts/champion_model/*
 !football_forecasts/champion_model/champion_prediction.ipynb
+
+# manim scene output (renders, caches) — never commit
+football_visuals/animations/media/
+
+# manim scene output (renders, caches) — never commit
+media/
