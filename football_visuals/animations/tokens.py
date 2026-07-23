@@ -35,13 +35,24 @@ __all__ = [
     "KICK", "KICK_CAT", "KICK_STATUS", "W_pair", "kick_ramp",
     "KICK_SEQ_STOPS", "KICK_SEQ_WARM_STOPS", "KICK_DIV_STOPS", "KICK_LAYOUT",
     "FRAME_W", "PX_PER_UNIT", "U_PER_CANVAS_IN", "pt_to_px", "MARGIN_U", "LINE_WIDTH", "seq",
-    "MEDALS", "FONT", "FONT_BOLD", "W",
+    "MEDALS", "FONT", "FONT_BOLD", "FONT_VALUE", "W",
 ]
 
-# ── the house display FACE for scenes (Chakra Petch, the still title face) ───
-# Pango resolves it by family name; kick_style registers it for matplotlib, fontconfig for manim.
-FONT = "Chakra Petch"
-FONT_BOLD = "Chakra Petch"      # same family, weight is a Text() argument
+# ── the scene FACE — Inter (a per-format CRAFT choice, like the motion ground; NOT the still identity) ──
+# The still house face is Chakra Petch — a monospace-inspired display face that reads as a mark at title
+# size. But a MOTION board leans on small numbers/captions (the axis ticks, the qualifier, the count-up
+# values, the row names), and there Chakra Petch is wide, grid-like and barely-kerned: digits read as
+# gaps ('9 0', '60 0'), and its own near-absent kerning means letter_spacing can't fix it (Pango drops
+# kerning the moment spacing is set → uneven). Inter is a superbly-kerned grotesque with tight, even
+# figures at every size, so the video moves to it. This lives here with the video law and leaves the
+# still identity (kick_style / kick_tokens) untouched. Pango resolves it by family name; weight is a
+# Text() argument, so one family covers Regular + Bold.
+FONT = "Inter"
+FONT_BOLD = "Inter"
+# The big RANKING NUMBERS keep the house display face — Chakra Petch's techy figures ARE the identity at
+# hero size, and its small-size gappiness is a non-issue that large. Everything else (title, qualifier,
+# axis ticks, names/tags, chrome) stays Inter, which kerns tight and even. A deliberate display+text pair.
+FONT_VALUE = "Chakra Petch"
 
 
 def W(a):

@@ -43,16 +43,19 @@ MOTION_BG = "#0A0A0B"                   # near-black, essentially neutral
 MOTION_STAGE = "#141518"               # the stage: a whisper lifted from the ground, still neutral
 
 
-def apply_motion_config(output_file="motion", w=1920, h=1080, fps=FPS):
-    """The one place the 1920x1080 / 16:9 / 30fps frame + motion ground are set."""
-    config.pixel_width, config.pixel_height = w, h
+def apply_motion_config(output_file="motion", w=1920, h=1080, fps=FPS, ss=1):
+    """The one place the 1920x1080 / 16:9 / 30fps frame + motion ground are set. `ss` is the SUPERSAMPLE
+    factor: the frame is rendered at `ss`× the target pixel size, then render.py downscales it back to
+    (w, h) with a Lanczos filter — SSAA that crisps up thin strokes and small text. Stroke widths are
+    resolution-relative in manim (verified), so they need no compensation; only the pixel grid changes."""
+    config.pixel_width, config.pixel_height = w * ss, h * ss
     config.frame_width, config.frame_height = FRAME_W, FRAME_H
     config.frame_rate = fps
     config.background_color = MOTION_BG
     config.output_file = output_file
 
 
-def halftone(width=STAGE_W, height=STAGE_H, spacing=None, dot_r=0.020, alpha=0.12):
+def halftone(width=STAGE_W, height=STAGE_H, spacing=None, dot_r=0.020, alpha=0.08):
     """The quiet dot texture — a hex-offset lattice filling only the STAGE. The grain is what DEFINES the
     content area: a textured stage against clean margins, so the eye reads the stage as the surface and
     the margins as quiet chrome.
@@ -110,17 +113,29 @@ def _icon_logo(target_h, alpha=0.55):
     return ImageMobject(arr).scale_to_fit_height(target_h).set_z_index(30)
 
 
-def _tracked(text, size, color, bold=False, opacity=1.0, tracking=1150):
-    """A chrome label with WIDE letter tracking — the display treatment (uppercase reads as a mark, not
-    a word). Pango `letter_spacing` adds space between glyphs; manim's plain Text has no tracking, so
-    this routes through MarkupText. `color` is a solid hex; opacity is applied separately (an 8-digit
-    hex would be dropped)."""
+def _tracked(text, size, color, bold=False, opacity=1.0, tracking=450):
+    """A chrome label with letter tracking — the display treatment (uppercase reads as a mark, not a
+    word). Pango `letter_spacing` adds space between glyphs; manim's plain Text has no tracking, so this
+    routes through MarkupText. `color` is a solid hex; opacity is applied separately (an 8-digit hex
+    would be dropped). Tracking is measured, not eyeballed — 450 at the 24pt title reads as a cohesive
+    mark; small caps take a touch more (see the eyebrow/sub call sites) but nowhere near the original
+    1150/2200, which gapped the glyphs so wide the word fell apart."""
     fw = "bold" if bold else "normal"
     m = MarkupText(f'<span letter_spacing="{tracking}" font_weight="{fw}">{text}</span>',
                    font=T.FONT, font_size=size, color=color)
     if opacity != 1.0:
         m.set_opacity(opacity)
     return m
+
+
+def crisp_text(text, font_size, base=64, **kw):
+    """Latin text at a small `font_size` MIS-KERNS in manim/Pango ('9 0', '≥60 0', 'S hot s Faced') — a
+    LAYOUT bug (wrong glyph positions), not rasterisation, so supersampling can't touch it. Render at a
+    large `base` size where the kerning is correct, then uniformly scale down: crisp and layout-preserving.
+    This is the private film's `board_common.crisp_text` trick — and the reason the scale_to_fit_height
+    row text (names/values, built at the default 48 then shrunk) always looked right while the small
+    explicit-`font_size` labels (title/qualifier/ticks/footnote) gapped. Use this for those."""
+    return Text(text, font_size=base, **kw).scale(font_size / base)
 
 
 def make_canvas(title="INDIVIDUALS", eyebrow="EVALUATION OF",
@@ -152,14 +167,14 @@ def make_canvas(title="INDIVIDUALS", eyebrow="EVALUATION OF",
     max_h = STAGE_H - 1.4
     if tm.height > max_h:
         tm.scale(max_h / tm.height)
-    es = _tracked(eyebrow, 13, T.KICK["accent"], opacity=0.65, tracking=2200).rotate(PI / 2)
+    es = _tracked(eyebrow, 13, T.KICK["accent"], opacity=0.65, tracking=750).rotate(PI / 2)
     left = VGroup(tm, es).arrange(LEFT, aligned_edge=UP, buff=0.16).set_z_index(20)
     left.move_to([-W2 - 0.22 - left.width / 2, H2 - left.height / 2, 0])
     out["title"] = left
 
     # RIGHT (vertical, reads top→bottom): context + sub, bottom-aligned
     cm = _tracked(context, 24, "#FFFFFF", bold=True, opacity=0.38).rotate(-PI / 2)
-    cs = _tracked(context_sub, 13, "#FFFFFF", opacity=0.28, tracking=2200).rotate(-PI / 2)
+    cs = _tracked(context_sub, 13, "#FFFFFF", opacity=0.28, tracking=750).rotate(-PI / 2)
     right = VGroup(cm, cs).arrange(RIGHT, aligned_edge=DOWN, buff=0.16).set_z_index(20)
     right.move_to([W2 + 0.22 + right.width / 2, -H2 + right.height / 2, 0])
     out["context"] = right
@@ -193,3 +208,37 @@ def make_canvas(title="INDIVIDUALS", eyebrow="EVALUATION OF",
         emblem.move_to([left_x + emblem.width / 2, H2 - emblem.height / 2, 0]).set_z_index(30)
         out["emblem"] = emblem
     return out
+
+
+# ── JSON bridge: a `canvas` spec block → the positioned stage+chrome dict ─────────────────────────
+def load_emblem(path, root=None):
+    """Load a PRE-PROCESSED emblem PNG (already white-on-transparent and tight-trimmed — see
+    assets/emblems/README.md) as an ImageMobject for the top-right slot. `path` is absolute, or relative
+    to the football_visuals package root. The PNG carries its own per-pixel alpha, so ImageMobject shows
+    it cleanly — no `set_opacity` dark-box. Returns None if the asset is missing or unreadable, so a spec
+    that names a wrong path degrades to an empty slot (exactly what `emblem=None` does) instead of
+    crashing the render."""
+    if not path:
+        return None
+    p = Path(path)
+    if not p.is_absolute():
+        p = (Path(root) if root else HERE.parent) / p
+    try:
+        img = Image.open(p).convert("RGBA")
+    except Exception:
+        return None
+    return ImageMobject(np.asarray(img))
+
+
+_CANVAS_KEYS = ("title", "eyebrow", "context", "context_sub", "section", "n_sections", "watermark")
+
+
+def build_canvas(spec, root=None):
+    """Turn a JSON `canvas` block into the stage+chrome dict. The only field needing resolution is
+    `emblem`, a PATH here vs a mobject in `make_canvas` — load it, then delegate. Unknown keys are ignored
+    so a spec may carry extra annotation without breaking the render."""
+    spec = dict(spec or {})
+    emb = spec.pop("emblem", None)
+    kw = {k: spec[k] for k in _CANVAS_KEYS if k in spec}
+    kw["emblem"] = load_emblem(emb, root=root) if emb else None
+    return make_canvas(**kw)
