@@ -29,7 +29,23 @@ This module contains implementations and experiments around football analytics m
 | On-Ball Value (OBV) | N/A | Event + Tracking | 🔴 Developing... |
 
 
-### 1.2 football_visuals
+### 1.2 pitch_deck — applied showcase
+
+Where the notebooks above *measure* the game, this is where KICK's applied work *operates* on it — a showcase place for the interactive tools and the computer-vision pipeline behind them. As with [`football_forecasts`](./football_forecasts) below, the **demos are shown but the implementations stay private (closed source) for now**; the showcase materials — field-guide PDFs, demo videos and notebooks — live in [`pitch_deck/`](./pitch_deck).
+
+Two things lead it:
+
+- **Real-time tracking pipeline** — the state-of-the-art computer-vision engine that turns raw broadcast footage into per-frame pitch homography, player tracks and the ball, **fully automatically** (detection → keypoint calibration → tracking → matting). No manual chroma-keying, tagging or camera calibration. It is what every tool below is built on, and was deployed live on **World Cup 2026**.
+- **Pitch Prism** — a desktop **football telestrator** built on that pipeline. Freeze a moment or mark a passage of play, then draw markers, arrows, spotlights, zones and motion trails that sit on the real grass — perspective-correct, because the app knows where the pitch is. The field guide is a full interface tour.
+
+| Name | Showcase | Status |
+| :--- | :--- | :--- |
+| Real-time tracking pipeline | [Demo video](./pitch_deck/tracking_pipeline) | 🟡 Preview (closed source) |
+| Pitch Prism — telestrator | [Field guide (PDF)](./pitch_deck/pitch_prism.pdf) | 🟡 Preview (closed source) |
+| Pitch Reel | N/A | 🔴 Developing... |
+| Pitch Pilot | N/A | 🔴 Developing... |
+
+### 1.3 football_visuals
 
 This module owns the project's **shared visual language**, in both still and moving form.
 
@@ -41,7 +57,7 @@ This module owns the project's **shared visual language**, in both still and mov
 | :---: | :---: |
 | ![Metric Surface Animation](repo_media/metric_surface_example.gif) | ![Voronoi Animation](repo_media/voronoi_example.gif) |
 
-### 1.3 football_simulations
+### 1.4 football_simulations
 
 | Name | Approach | Status |
 | :--- | :--- | :--- |
@@ -49,7 +65,7 @@ This module owns the project's **shared visual language**, in both still and mov
 
 This module will contain simulation and control: reinforcement learning (RL) environments that allow agents to learn football behaviors from reward signals and environment dynamics. An earlier Unity (ML-Agents) prototype has been retired; the environment is being rebuilt in **JAX** and will be published here when ready.
 
-### 1.4 football_forecasts
+### 1.5 football_forecasts
 
 This module contains **predictive** models. Where [`football_metrics`](./football_metrics) measures *what happened*, these forecast *what will happen*. Demos are published as **fully-baked notebooks** — every figure and number is the output of a real end-to-end run — while the underlying pipelines and trained weights power a live production deployment and stay private.
 
