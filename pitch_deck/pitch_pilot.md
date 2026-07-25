@@ -8,26 +8,13 @@ whistle.
 This guide shows **one segment of that system: the tactical replay**. Give it nothing but the
 match's **live data feed** — no broadcast video, no tracking data — and it renders the story as a
 broadcast-grade tactical film: the key moments played out on an animated stadium pitch, narrated
-caption by caption, with the analytics boards a TV production would cut to. The example on this page
+caption by caption, with the analytics boards a TV production would cut to. 
+
+The example on this page
 is **Brazil 2–1 Japan** (World Cup 2026): 3,921 raw feed events in, one four-minute replay out,
 generated end-to-end with no human editing.
 
 ![Brazil 2-1 Japan](src/pitch_pilot/assets/01_scoreline.png)
-
-## What you're watching
-
-![28' — Japan take the lead](src/pitch_pilot/assets/02_goal_moment.png)
-
-Japan's opener, as the replay tells it. Around the pitch:
-
-- **LED scoreboard** (top) — the minute, the protagonist, the event, and its expected-goals value
-  (佐野海舟 · 进球 · 预期进球 0.03 — *Sano · goal · xG 0.03*).
-- **The pitch** — all 22 players as numbered chips, the man on the ball tagged with role and name
-  (`CMF | 佐野海舟`), the score-so-far watermarked on the grass.
-- **Caption bar** — one line of Chinese narration per beat: *"28th minute — Sano breaks through the
-  middle, Japan lead!"*
-- **Match-pulse strip** (bottom) — momentum minute by minute, colored by team, with every goal
-  pinned on the timeline.
 
 ## Every key moment, animated
 
