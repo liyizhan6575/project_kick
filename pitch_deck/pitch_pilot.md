@@ -1,10 +1,16 @@
 # Pitch Pilot — the tactical replay
 
-Give Pitch Pilot nothing but a match's **live data feed** — no broadcast video, no tracking data —
-and it renders the whole story as a broadcast-grade tactical film: every key moment played out on an
-animated stadium pitch, narrated caption by caption, with the analytics boards a TV production would
-cut to. The example on this page is **Brazil 2–1 Japan** (World Cup 2026): 3,921 raw feed events in,
-one four-minute replay out, generated end-to-end with no human editing.
+**Pitch Pilot is a broadcast service.** It turns a live match into fun facts, insights and tactical
+flows for almost every moment of play — so the audience isn't just waiting for the scoring moments,
+but understands the match as it unfolds and stays engaged with the broadcast from kick-off to the
+whistle.
+
+This guide shows **one segment of that system: the tactical replay**. Give it nothing but the
+match's **live data feed** — no broadcast video, no tracking data — and it renders the story as a
+broadcast-grade tactical film: the key moments played out on an animated stadium pitch, narrated
+caption by caption, with the analytics boards a TV production would cut to. The example on this page
+is **Brazil 2–1 Japan** (World Cup 2026): 3,921 raw feed events in, one four-minute replay out,
+generated end-to-end with no human editing.
 
 ![Brazil 2-1 Japan](src/pitch_pilot/assets/01_scoreline.png)
 
@@ -96,3 +102,6 @@ reconstruction of shape and movement, not recorded tracking data (仅供参考).
 1. A data feed goes in — no cameras, no trackers, no editor.
 2. Facts, features and a director's cut are computed.
 3. A watchable tactical film comes out, minutes after full-time — for any match the feed covers.
+
+And the replay is one segment of Pitch Pilot: the same facts and features drive the service's other
+broadcast surfaces, from in-play insights to the moment-by-moment tactical reads.

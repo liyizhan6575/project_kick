@@ -9,7 +9,7 @@ what they do. Linked from the repo [main README](../README.md).
 | Showcase | Material | Status |
 |---|---|---|
 | **Pitch Prism** — football telestrator | [Field guide](pitch_prism.md) | 🟡 Preview |
-| **Pitch Pilot** — tactical replay from a data feed | [Field guide](pitch_pilot.md) | 🟡 Preview |
+| **Pitch Pilot** — match-understanding broadcast service | [Field guide — the tactical replay](pitch_pilot.md) | 🟡 Preview |
 | **Pitch Reel** | to come | ◻︎ To do |
 
 Each guide is a plain **Markdown** manual that renders on GitHub, illustrated with real screenshots
