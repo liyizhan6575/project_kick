@@ -32,9 +32,9 @@ Casemiro's header* — and the scoreboard flips from 1-0 to 1-1.
 After every goal the replay cuts to a **goal contribution** card: the chain that produced it, drawn
 in the box, each contributor listed with shirt, role and the value of his touch. One tap deeper
 (战术视角 — *tactical view*) replays the move top-down on the full pitch. Brazil's 95th-minute
-winner, from build-up to breakdown:
+winner, broken down the moment it lands:
 
-![95' — the winner, then the breakdown](src/pitch_pilot/assets/05_winner.gif)
+![95' — the winner's breakdown](src/pitch_pilot/assets/05_winner.gif)
 
 ![Goal contribution — the equalizer's chain](src/pitch_pilot/assets/04_contribution.png)
 
@@ -69,26 +69,8 @@ a controlled win."*
 
 ![Insight](src/pitch_pilot/assets/10_insight.png)
 
-## What's under the hood
+---
 
-1. **The feed** — the standard live event stream used across professional football (the same data
-   behind broadcast graphics), here 3,921 raw events for the match.
-2. **The fact ledger** — events are cleaned into canonical facts: possession chains, pass receivers,
-   line-ups, restarts.
-3. **The feature engine** — xG, threat value, momentum, win probability, networks and territory are
-   computed on top of the facts.
-4. **The director** — selects the moments, writes the captions, sequences the boards, and assembles
-   the film.
-
-One honest note, printed on the film itself: the ball's path follows the real event coordinates, but
+*One honest note, printed on the film itself: the ball follows the real event coordinates, while
 the 21 off-ball players are animated by a model trained on historical matches — an informed
-reconstruction of shape and movement, not recorded tracking data (仅供参考).
-
-## In short
-
-1. A data feed goes in — no cameras, no trackers, no editor.
-2. Facts, features and a director's cut are computed.
-3. A watchable tactical film comes out, minutes after full-time — for any match the feed covers.
-
-And the replay is one segment of Pitch Pilot: the same facts and features drive the service's other
-broadcast surfaces, from in-play insights to the moment-by-moment tactical reads.
+reconstruction, not recorded tracking data (仅供参考).*
