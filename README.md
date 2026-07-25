@@ -31,16 +31,14 @@ This module contains implementations and experiments around football analytics m
 
 ### 1.2 pitch_deck — applied showcase
 
-Where the notebooks above *measure* the game, this is where KICK's applied work *operates* on it — a showcase place for the interactive tools and the computer-vision pipeline behind them. As with [`football_forecasts`](./football_forecasts) below, the **demos are shown but the implementations stay private (closed source) for now**; the showcase materials — field-guide PDFs, demo videos and notebooks — live in [`pitch_deck/`](./pitch_deck).
+Where the notebooks above *measure* the game, this is where KICK's applied work *operates* on it — a showcase place for the interactive tools built on it. As with [`football_forecasts`](./football_forecasts) below, the **demos are shown but the implementations stay private (closed source) for now**; the showcase materials — field-guide PDFs, demo videos and notebooks — live in [`pitch_deck/`](./pitch_deck).
 
-Two things lead it:
+Leading it:
 
-- **Real-time tracking pipeline** — the state-of-the-art computer-vision engine that turns raw broadcast footage into per-frame pitch homography, player tracks and the ball, **fully automatically** (detection → keypoint calibration → tracking → matting). No manual chroma-keying, tagging or camera calibration. It is what every tool below is built on, and was deployed live on **World Cup 2026**.
-- **Pitch Prism** — a desktop **football telestrator** built on that pipeline. Freeze a moment or mark a passage of play, then draw markers, arrows, spotlights, zones and motion trails that sit on the real grass — perspective-correct, because the app knows where the pitch is. The field guide is a full interface tour.
+- **Pitch Prism** — a desktop **football telestrator**. Freeze a moment or mark a passage of play, then draw markers, arrows, spotlights, zones and motion trails that sit on the real grass — perspective-correct, because the app knows where the pitch is. The field guide is a full interface tour.
 
 | Name | Showcase | Status |
 | :--- | :--- | :--- |
-| Real-time tracking pipeline | [Demo video](./pitch_deck/tracking_pipeline) | 🟡 Preview (closed source) |
 | Pitch Prism — telestrator | [Field guide (PDF)](./pitch_deck/pitch_prism.pdf) | 🟡 Preview (closed source) |
 | Pitch Reel | N/A | 🔴 Developing... |
 | Pitch Pilot | N/A | 🔴 Developing... |
