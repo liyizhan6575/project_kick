@@ -24,3 +24,7 @@ football_visuals/animations/media/
 
 # manim scene output (renders, caches) — never commit
 media/
+
+# CONFIDENTIAL — licensed match data, never commit, never publish.
+# private_data/ also carries its own .gitignore as a second layer.
+/private_data/
