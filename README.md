@@ -40,8 +40,9 @@ Leading it:
 | Name | Showcase | Status |
 | :--- | :--- | :--- |
 | Pitch Prism — telestrator | [Field guide](./pitch_deck/pitch_prism.md) | 🟡 Preview (closed source) |
+| Pitch Pilot — broadcast service | [Field guide — tactical replay](./pitch_deck/pitch_pilot.md) | 🟡 Preview (tactical replay) |
+| Tracking Pipeline — broadcast → 2D | [Field guide](./pitch_deck/tracking_pipeline.md) | 🟡 Preview (closed source) |
 | Pitch Reel | N/A | 🔴 Developing... |
-| Pitch Pilot | N/A | 🔴 Developing... |
 
 ### 1.3 football_visuals
 
