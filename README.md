@@ -16,10 +16,10 @@ This module contains implementations and experiments around football analytics m
 
 | Name | File Link | Data Input | Status |
 | :--- | :--- | :--- | :--- | 
+| Pitch Control | [`pitch_control.ipynb`](./football_metrics/pitch_control.ipynb) | Tracking | 🟢 Demo Available |
 | Expected Goals (xG) | [`xG.ipynb`](./football_metrics/xG.ipynb) | Event | 🟢 Demo Available |
 | Expected Assists (xA) | [`xA.ipynb`](./football_metrics/xA.ipynb) | Event | 🟢 Demo Available |
 | Expected Threat (xT) | [`xT.ipynb`](./football_metrics/xT.ipynb) | Event | 🟢 Demo Available |
-| Pitch Control | [`pitch_control.ipynb`](./football_metrics/pitch_control.ipynb) | Tracking | 🟢 Demo Available |
 | Passing Network | [`passing_network.ipynb`](./football_metrics/passing_network.ipynb) | Event | 🟢 Demo Available |
 | Physical Analysis | [`physical_analysis.ipynb`](./football_metrics/physical_analysis.ipynb) | Tracking | 🟢 Demo Available |
 | Passes per Defensive Action (PPDA) | [`ppda.ipynb`](./football_metrics/ppda.ipynb) | Event | 🟢 Demo Available |
@@ -31,7 +31,7 @@ This module contains implementations and experiments around football analytics m
 
 ### 1.2 pitch_deck — applied showcase
 
-Where the notebooks above *measure* the game, this is where KICK's applied work *operates* on it — a showcase place for the interactive tools built on it. As with [`football_forecasts`](./football_forecasts) below, the **demos are shown but the implementations stay private (closed source) for now**; the showcase materials — field-guide PDFs, demo videos and notebooks — live in [`pitch_deck/`](./pitch_deck).
+Where the notebooks above *measure* the game, this is where KICK's applied work *operates* on it — a showcase place for the interactive tools built on it. As with [`football_forecasts`](./football_forecasts) below, the **demos are shown but the implementations stay private (closed source) for now**; the field guides — Markdown manuals with real screenshots — live in [`pitch_deck/`](./pitch_deck).
 
 Leading it:
 
@@ -39,7 +39,7 @@ Leading it:
 
 | Name | Showcase | Status |
 | :--- | :--- | :--- |
-| Pitch Prism — telestrator | [Field guide (PDF)](./pitch_deck/pitch_prism.pdf) | 🟡 Preview (closed source) |
+| Pitch Prism — telestrator | [Field guide](./pitch_deck/pitch_prism.md) | 🟡 Preview (closed source) |
 | Pitch Reel | N/A | 🔴 Developing... |
 | Pitch Pilot | N/A | 🔴 Developing... |
 
