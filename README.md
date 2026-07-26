@@ -36,6 +36,8 @@ Where the notebooks above *measure* the game, this is where KICK's applied work 
 Leading it:
 
 - **Pitch Prism** — a desktop **football telestrator**. Freeze a moment or mark a passage of play, then draw markers, arrows, spotlights, zones and motion trails that sit on the real grass — perspective-correct, because the app knows where the pitch is. The field guide is a full interface tour.
+- **Pitch Pilot** — a **broadcast service** that turns a live match into fun facts, insights and tactical flows, so the audience understands the game as it unfolds rather than just waiting for the goals. The field guide previews one segment — the *tactical replay* — which renders a match's key moments as a broadcast-grade tactical film from the live data feed alone.
+- **Tracking Pipeline** — the **vision engine**: an ordinary broadcast clip goes in; a calibrated pitch, a recovered 3D camera, identified players and a bird's-eye tactical board come out — no tracking chips, no extra cameras, no manual setup. The field guide walks a World Cup 2022 clip through calibration, 3D camera recovery, player detection + team-ID, and the broadcast→2D board.
 
 | Name | Showcase | Status |
 | :--- | :--- | :--- |
